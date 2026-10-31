@@ -112,7 +112,7 @@ export default function CustomerPortal() {
   }
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+    <div style={{ width: '100%', margin: '0 auto' }}>
       {/* Welcome Hero Banner */}
       <div className="portal-hero">
         <div className="portal-hero-inner">

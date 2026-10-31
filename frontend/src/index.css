@@ -32,6 +32,11 @@
   padding: 0;
 }
 
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -73,9 +78,10 @@ button {
    ============================================================ */
 
 .layout {
-  display: grid;
-  grid-template-columns: var(--sidebar-width) 1fr;
   min-height: 100vh;
+  position: relative;
+  background: var(--bg-primary);
+  width: 100%;
 }
 
 /* ============================================================
@@ -248,9 +254,12 @@ button {
 
 .main-content {
   margin-left: var(--sidebar-width);
+  width: calc(100% - var(--sidebar-width));
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* ============================================================
@@ -262,6 +271,7 @@ button {
   top: 0;
   left: var(--sidebar-width);
   right: 0;
+  width: calc(100% - var(--sidebar-width));
   height: var(--header-height);
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
@@ -271,6 +281,7 @@ button {
   padding: 0 24px;
   z-index: 99;
   gap: 16px;
+  box-sizing: border-box;
 }
 
 .topbar-left {
@@ -308,9 +319,12 @@ button {
    ============================================================ */
 
 .page-content {
-  padding: 24px;
+  padding: 24px 32px;
   margin-top: var(--header-height);
   flex: 1;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* ============================================================
@@ -1573,7 +1587,7 @@ textarea {
 /* Tier 2: Tablets & Small Laptops (769px - 1024px) */
 @media (max-width: 1024px) {
   .layout {
-    display: block !important;
+    width: 100% !important;
   }
 
   .mobile-menu-btn {
@@ -1598,15 +1612,18 @@ textarea {
 
   .main-content {
     margin-left: 0 !important;
+    width: 100% !important;
   }
 
   .topbar {
     left: 0 !important;
+    width: 100% !important;
     padding: 0 20px !important;
   }
 
   .page-content {
     padding: 20px !important;
+    width: 100% !important;
   }
 
   .grid-3 {
