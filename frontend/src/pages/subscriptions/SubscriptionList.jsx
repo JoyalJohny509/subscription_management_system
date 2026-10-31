@@ -125,6 +125,22 @@ export default function SubscriptionList() {
               Activate
             </button>
           )}
+          {isStaff() && row.status === 'paused' && (
+            <>
+              <button
+                className="btn btn-success btn-sm"
+                onClick={() => handleAction(activateSubscription, row.id, 'Subscription resumed!')}
+              >
+                Resume
+              </button>
+              <button
+                className="btn btn-danger btn-sm"
+                onClick={() => handleAction(closeSubscription, row.id, 'Subscription closed')}
+              >
+                Close
+              </button>
+            </>
+          )}
           {isStaff() && row.status === 'active' && (
             <>
               <button
