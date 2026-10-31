@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 
 const { initializeDB } = require('./db/schema');
+const { startBillingCron } = require('./jobs/billingCron');
 
 const authRoutes         = require('./routes/auth');
 const usersRoutes        = require('./routes/users');
@@ -17,6 +18,11 @@ const notificationsRoutes = require('./routes/notifications');
 
 // ── Initialize DB ──────────────────────────────────────────────────────────────
 initializeDB();
+
+// ─── Background Billing Scheduler ───────────────────────────────────────────
+if (process.env.NODE_ENV !== 'test') {
+  startBillingCron();
+}
 
 const app = express();
 const PORT = process.env.PORT || 5001;
