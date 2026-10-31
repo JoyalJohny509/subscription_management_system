@@ -77,7 +77,7 @@ export default function UpiPaymentModal({ isOpen, onClose, invoice, onPaymentSuc
               </div>
             </div>
 
-            {qrData?.qrCodeDataUrl && (
+            {(qrData?.qr_code || qrData?.qrCodeDataUrl) && (
               <div
                 style={{
                   display: 'inline-block',
@@ -89,7 +89,7 @@ export default function UpiPaymentModal({ isOpen, onClose, invoice, onPaymentSuc
                 }}
               >
                 <img
-                  src={qrData.qrCodeDataUrl}
+                  src={qrData.qr_code || qrData.qrCodeDataUrl}
                   alt="UPI QR Code"
                   style={{ width: '220px', height: '220px', margin: '0 auto', display: 'block' }}
                 />
