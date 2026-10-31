@@ -62,17 +62,17 @@ export default function DiscountList() {
     {
       key: 'code',
       label: 'Coupon Code',
-      render: (row) => (
+      render: (_, row) => (
         <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent-primary)', fontSize: '1rem' }}>
           {row.code}
         </span>
       ),
     },
-    { key: 'name', label: 'Rule Name', render: (row) => row.name },
+    { key: 'name', label: 'Rule Name', render: (_, row) => row.name },
     {
       key: 'value',
       label: 'Discount',
-      render: (row) => (
+      render: (_, row) => (
         <strong>
           {row.type === 'percentage' ? `${row.value}%` : fmt(row.value)}
         </strong>
@@ -81,12 +81,12 @@ export default function DiscountList() {
     {
       key: 'min_amount',
       label: 'Min Amount',
-      render: (row) => (row.min_amount ? fmt(row.min_amount) : 'None'),
+      render: (_, row) => (row.min_amount ? fmt(row.min_amount) : 'None'),
     },
     {
       key: 'usage',
       label: 'Uses',
-      render: (row) => (
+      render: (_, row) => (
         <span>
           {row.uses_count || 0} / {row.max_uses !== null ? row.max_uses : '∞'}
         </span>
@@ -95,7 +95,7 @@ export default function DiscountList() {
     {
       key: 'validity',
       label: 'Valid Period',
-      render: (row) => (
+      render: (_, row) => (
         <span style={{ fontSize: '0.85rem' }}>
           {row.start_date || 'Any'} → {row.end_date || 'Any'}
         </span>
@@ -104,14 +104,14 @@ export default function DiscountList() {
     {
       key: 'status',
       label: 'Status',
-      render: (row) => <Badge status={row.is_active ? 'active' : 'closed'} />,
+      render: (_, row) => <Badge status={row.is_active ? 'active' : 'closed'} />,
     },
     ...(isAdmin()
       ? [
           {
             key: 'actions',
             label: 'Actions',
-            render: (row) => (
+            render: (_, row) => (
               <div style={{ display: 'flex', gap: 6 }}>
                 <button
                   className="btn btn-secondary btn-sm"

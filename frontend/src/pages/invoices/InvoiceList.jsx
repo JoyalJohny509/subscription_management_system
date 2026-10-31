@@ -68,7 +68,7 @@ export default function InvoiceList() {
     {
       key: 'invoice_number',
       label: 'Invoice #',
-      render: (row) => (
+      render: (_, row) => (
         <a
           href={`/invoices/${row.id}`}
           onClick={(e) => { e.preventDefault(); navigate(`/invoices/${row.id}`) }}
@@ -81,7 +81,7 @@ export default function InvoiceList() {
     {
       key: 'customer',
       label: 'Customer',
-      render: (row) => (
+      render: (_, row) => (
         <div>
           <div>{row.customer_name || 'N/A'}</div>
           {row.company_name && (
@@ -90,26 +90,26 @@ export default function InvoiceList() {
         </div>
       ),
     },
-    { key: 'grand_total', label: 'Amount', render: (row) => fmt(row.grand_total) },
+    { key: 'grand_total', label: 'Amount', render: (_, row) => fmt(row.grand_total) },
     {
       key: 'issue_date',
       label: 'Issue Date',
-      render: (row) => (row.issue_date ? new Date(row.issue_date).toLocaleDateString('en-IN') : '-'),
+      render: (_, row) => (row.issue_date ? new Date(row.issue_date).toLocaleDateString('en-IN') : '-'),
     },
     {
       key: 'due_date',
       label: 'Due Date',
-      render: (row) => (row.due_date ? new Date(row.due_date).toLocaleDateString('en-IN') : '-'),
+      render: (_, row) => (row.due_date ? new Date(row.due_date).toLocaleDateString('en-IN') : '-'),
     },
     {
       key: 'status',
       label: 'Status',
-      render: (row) => <Badge status={row.status} />,
+      render: (_, row) => <Badge status={row.status} />,
     },
     {
       key: 'actions',
       label: 'Actions',
-      render: (row) => (
+      render: (_, row) => (
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           <button
             className="btn btn-secondary btn-sm"

@@ -29,7 +29,11 @@ export default function Login() {
       const data = res.data.data || res.data
       const { token, user } = data
       login(user, token)
-      navigate('/dashboard')
+      if (user?.role === 'customer') {
+        navigate('/portal')
+      } else {
+        navigate('/dashboard')
+      }
     } catch (err) {
       setError(err.response?.data?.error || err.response?.data?.message || 'Login failed. Please check your credentials.')
     } finally {

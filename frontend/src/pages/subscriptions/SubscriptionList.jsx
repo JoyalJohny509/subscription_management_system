@@ -60,7 +60,7 @@ export default function SubscriptionList() {
     {
       key: 'sub_number',
       label: 'Sub #',
-      render: (row) => (
+      render: (_, row) => (
         <a
           href={`/subscriptions/${row.id}`}
           onClick={(e) => { e.preventDefault(); navigate(`/subscriptions/${row.id}`) }}
@@ -73,7 +73,7 @@ export default function SubscriptionList() {
     {
       key: 'customer',
       label: 'Customer',
-      render: (row) => (
+      render: (_, row) => (
         <div>
           <div>{row.customer_name || 'N/A'}</div>
           {row.company_name && (
@@ -82,17 +82,17 @@ export default function SubscriptionList() {
         </div>
       ),
     },
-    { key: 'plan_name', label: 'Plan', render: (row) => row.plan_name || 'Standard' },
-    { key: 'grand_total', label: 'Recurring Total', render: (row) => fmt(row.grand_total) },
+    { key: 'plan_name', label: 'Plan', render: (_, row) => row.plan_name || 'Standard' },
+    { key: 'grand_total', label: 'Recurring Total', render: (_, row) => fmt(row.grand_total) },
     {
       key: 'status',
       label: 'Status',
-      render: (row) => <Badge status={row.status} />,
+      render: (_, row) => <Badge status={row.status} />,
     },
     {
       key: 'period',
       label: 'Duration',
-      render: (row) => (
+      render: (_, row) => (
         <span style={{ fontSize: '0.85rem' }}>
           {row.start_date || 'Start'} → {row.expiry_date || 'Ongoing'}
         </span>
@@ -101,7 +101,7 @@ export default function SubscriptionList() {
     {
       key: 'actions',
       label: 'Actions',
-      render: (row) => (
+      render: (_, row) => (
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           <button
             className="btn btn-secondary btn-sm"
