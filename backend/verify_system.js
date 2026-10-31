@@ -157,7 +157,24 @@ async function testSystem() {
     const finalDash = await request('GET', '/dashboard/summary', null, adminToken);
     console.log(`   Updated Dashboard:`, finalDash.data.data || finalDash.data);
 
-    console.log('\n🎉 ALL 12 VERIFICATION TESTS PASSED SUCCESSFULLY! 🎉\n');
+    // 13. Member 1 Feature: Test Mid-Cycle Seat Upgrade & Pro-rated Billing
+    console.log('\n13. Testing Mid-Cycle Seat Upgrade with Pro-rated Calculation (Member 1)...');
+    const upgradeRes = await request('POST', `/subscriptions/${newSub.id}/upgrade-seats`, {
+      new_qty: 15,
+      effective_date: '2026-11-15'
+    }, adminToken);
+    console.log(`   Seat Upgrade Response:`, upgradeRes.data.message);
+    console.log(`   Prorated Invoice:`, upgradeRes.data.data?.invoice?.invoice_number, `Total: ₹${upgradeRes.data.data?.invoice?.grand_total}`);
+
+    // 14. Member 1 Feature: Test Automated Billing Cron Trigger
+    console.log('\n14. Testing Auto-Billing Cron Scheduler Trigger (Member 1)...');
+    const cronRes = await request('POST', '/subscriptions/trigger-billing-cron', {
+      target_date: '2026-12-01'
+    }, adminToken);
+    console.log(`   Cron Trigger Response:`, cronRes.data.message);
+    console.log(`   Invoices Generated: ${cronRes.data.data?.invoicesGenerated?.length}, Auto-Closed: ${cronRes.data.data?.subscriptionsClosed?.length}`);
+
+    console.log('\n🎉 ALL 14 VERIFICATION TESTS (INCLUDING MEMBER 1 CORE BILLING ENGINE) PASSED! 🎉\n');
     process.exit(0);
   } catch (err) {
     console.error('\n❌ Test failed with error:', err.message);

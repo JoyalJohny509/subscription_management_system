@@ -2,6 +2,8 @@ const express = require('express');
 const db = require('../db/database');
 const { authenticate } = require('../middleware/auth');
 const { authorize } = require('../middleware/rbac');
+const { runBillingJob } = require('../jobs/billingCron');
+const { upgradeSeats, addAddon } = require('../services/prorationService');
 
 const router = express.Router();
 router.use(authenticate);
@@ -162,5 +164,88 @@ router.post('/:id/pause', authorize('admin', 'staff'), (req, res) => {
 
 // ── POST /api/subscriptions/:id/close ────────────────────────────────────────
 router.post('/:id/close', authorize('admin', 'staff'), transition(['active', 'paused', 'confirmed'], 'closed'));
+
+// ── POST /api/subscriptions/trigger-billing-cron ──────────────────────────────
+router.post('/trigger-billing-cron', authorize('admin', 'staff'), (req, res) => {
+  try {
+    const { target_date } = req.body || {};
+    const summary = runBillingJob(target_date || null);
+    return res.json({
+      message: 'Billing cron job executed successfully',
+      data: summary
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/subscriptions/:id/upgrade-seats ─────────────────────────────────
+router.post('/:id/upgrade-seats', (req, res) => {
+  try {
+    const sub = db.prepare('SELECT customer_id FROM subscriptions WHERE id = ?').get(req.params.id);
+    if (!sub) return res.status(404).json({ error: 'Subscription not found' });
+
+    // Customer can only modify their own subscription
+    if (req.user.role === 'customer') {
+      const cust = db.prepare('SELECT user_id FROM customers WHERE id = ?').get(sub.customer_id);
+      if (!cust || cust.user_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const { line_id, new_qty, effective_date } = req.body;
+    if (new_qty === undefined || new_qty === null) {
+      return res.status(400).json({ error: 'new_qty is required' });
+    }
+
+    const result = upgradeSeats({
+      subscriptionId: req.params.id,
+      lineId: line_id || null,
+      newQty: new_qty,
+      effectiveDate: effective_date || null
+    });
+
+    return res.json({
+      message: 'Seats adjusted successfully with pro-rated billing calculation',
+      data: result
+    });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+});
+
+// ── POST /api/subscriptions/:id/add-addon ─────────────────────────────────────
+router.post('/:id/add-addon', (req, res) => {
+  try {
+    const sub = db.prepare('SELECT customer_id FROM subscriptions WHERE id = ?').get(req.params.id);
+    if (!sub) return res.status(404).json({ error: 'Subscription not found' });
+
+    if (req.user.role === 'customer') {
+      const cust = db.prepare('SELECT user_id FROM customers WHERE id = ?').get(sub.customer_id);
+      if (!cust || cust.user_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const { product_id, variant_id, description, qty, unit_price, tax_pct, effective_date } = req.body;
+    if (!product_id || unit_price === undefined) {
+      return res.status(400).json({ error: 'product_id and unit_price are required' });
+    }
+
+    const result = addAddon({
+      subscriptionId: req.params.id,
+      productId: product_id,
+      variantId: variant_id || null,
+      description: description || null,
+      qty: qty || 1,
+      unitPrice: unit_price,
+      taxPct: tax_pct || 0,
+      effectiveDate: effective_date || null
+    });
+
+    return res.json({
+      message: 'Add-on added successfully with pro-rated billing calculation',
+      data: result
+    });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+});
 
 module.exports = router;
