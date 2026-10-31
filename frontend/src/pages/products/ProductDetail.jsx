@@ -17,9 +17,21 @@ const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractio
 
 function VariantForm({ isOpen, onClose, onSave, initialData }) {
   const isEdit = !!initialData
-  const [form, setForm] = useState(initialData || { name: '', additional_price: '' })
+  const [form, setForm] = useState({ name: '', additional_price: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (initialData) {
+      setForm({
+        name: initialData.name || '',
+        additional_price: initialData.additional_price !== undefined && initialData.additional_price !== null ? initialData.additional_price : '',
+      })
+    } else {
+      setForm({ name: '', additional_price: '' })
+    }
+    setError('')
+  }, [initialData, isOpen])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -30,7 +42,7 @@ function VariantForm({ isOpen, onClose, onSave, initialData }) {
       await onSave({ name: form.name, additional_price: parseFloat(form.additional_price) || 0 })
       onClose()
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save variant.')
+      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to save variant.')
     } finally {
       setLoading(false)
     }
@@ -57,7 +69,7 @@ function VariantForm({ isOpen, onClose, onSave, initialData }) {
         <div className="modal-footer">
           <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>Cancel</button>
           <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? <><span className="spinner spinner-sm" /> Saving...</> : 'Save'}
+            {loading ? <><span className="spinner spinner-sm" /> Saving...</> : isEdit ? 'Save Changes' : 'Save'}
           </button>
         </div>
       </form>
@@ -87,7 +99,7 @@ export default function ProductDetail() {
       const varList = vRes.data?.data || vRes.data?.variants || vRes.data || []
       setVariants(Array.isArray(varList) ? varList : [])
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load product.')
+      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to load product.')
     } finally {
       setLoading(false)
     }
@@ -115,7 +127,7 @@ export default function ProductDetail() {
       await deleteVariant(id, variant._id || variant.id)
       fetchData()
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete variant.')
+      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to delete variant.')
     }
   }
 
@@ -235,19 +247,25 @@ export default function ProductDetail() {
         )}
       </div>
 
-      <ProductForm
-        isOpen={showEditProduct}
-        onClose={() => setShowEditProduct(false)}
-        onSave={handleEditProduct}
-        initialData={product}
-      />
+      {showEditProduct && (
+        <ProductForm
+          key={product?.id || 'prod'}
+          isOpen={showEditProduct}
+          onClose={() => setShowEditProduct(false)}
+          onSave={handleEditProduct}
+          initialData={product}
+        />
+      )}
 
-      <VariantForm
-        isOpen={showVariantForm}
-        onClose={() => setShowVariantForm(false)}
-        onSave={handleSaveVariant}
-        initialData={editVariant}
-      />
+      {showVariantForm && (
+        <VariantForm
+          key={editVariant?._id || editVariant?.id || 'var'}
+          isOpen={showVariantForm}
+          onClose={() => { setShowVariantForm(false); setEditVariant(null) }}
+          onSave={handleSaveVariant}
+          initialData={editVariant}
+        />
+      )}
     </div>
   )
 }

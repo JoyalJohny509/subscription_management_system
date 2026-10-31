@@ -74,12 +74,15 @@ export default function PlanList() {
     { key: 'min_qty', label: 'Min Qty', render: (_, row) => row.min_qty || 1 },
     {
       key: 'features',
-      label: 'Options',
+      label: 'Plan Rules',
       render: (_, row) => (
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-          {row.allow_pause ? <span className="badge badge-active" style={{ fontSize: '0.7rem' }}>Pause</span> : null}
-          {row.allow_renewal ? <span className="badge badge-confirmed" style={{ fontSize: '0.7rem' }}>Renew</span> : null}
-          {row.auto_close ? <span className="badge badge-closed" style={{ fontSize: '0.7rem' }}>Auto-close</span> : null}
+          {row.allow_pause ? <span className="badge badge-active" style={{ fontSize: '0.7rem' }}>✓ Pause Allowed</span> : null}
+          {row.allow_renewal ? <span className="badge badge-confirmed" style={{ fontSize: '0.7rem' }}>✓ Renewable</span> : null}
+          {row.auto_close ? <span className="badge badge-closed" style={{ fontSize: '0.7rem' }}>⏰ Auto-Close</span> : null}
+          {!row.allow_pause && !row.allow_renewal && !row.auto_close ? (
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Standard</span>
+          ) : null}
         </div>
       ),
     },
@@ -160,6 +163,7 @@ export default function PlanList() {
 
       {showForm && (
         <PlanForm
+          key={editPlan?.id || 'new'}
           isOpen={showForm}
           onClose={() => { setShowForm(false); setEditPlan(null) }}
           onSave={editPlan ? handleEdit : handleCreate}

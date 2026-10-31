@@ -89,9 +89,14 @@ export default function QuotationDetail() {
             🖨️ Print
           </button>
           {isStaff() && quotation.status === 'draft' && (
-            <button className="btn btn-primary" onClick={handleSend}>
-              Send to Customer
-            </button>
+            <>
+              <button className="btn btn-secondary" onClick={() => navigate(`/quotations/${id}/edit`)}>
+                ✏️ Edit
+              </button>
+              <button className="btn btn-primary" onClick={handleSend}>
+                Send to Customer
+              </button>
+            </>
           )}
           {isStaff() && quotation.status === 'sent' && (
             <>

@@ -31,7 +31,7 @@ export default function UserList() {
       setUsers(data.users || data.data || data)
       if (data.totalPages) setTotalPages(data.totalPages)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load users.')
+      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to load users.')
     } finally {
       setLoading(false)
     }
@@ -91,7 +91,7 @@ export default function UserList() {
             className="btn btn-primary"
             onClick={() => { setEditUser(null); setShowForm(true) }}
           >
-            + Create Staff
+            + Create User
           </button>
         )}
       </div>
@@ -116,12 +116,15 @@ export default function UserList() {
       />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
-      <UserForm
-        isOpen={showForm}
-        onClose={() => setShowForm(false)}
-        onSave={editUser ? handleEdit : handleCreate}
-        initialData={editUser}
-      />
+      {showForm && (
+        <UserForm
+          key={editUser?._id || editUser?.id || 'new'}
+          isOpen={showForm}
+          onClose={() => { setShowForm(false); setEditUser(null) }}
+          onSave={editUser ? handleEdit : handleCreate}
+          initialData={editUser}
+        />
+      )}
     </div>
   )
 }

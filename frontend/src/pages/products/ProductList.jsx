@@ -132,12 +132,15 @@ export default function ProductList() {
       <DataTable columns={columns} data={products} loading={loading} emptyMessage="No products found." />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
-      <ProductForm
-        isOpen={showForm}
-        onClose={() => setShowForm(false)}
-        onSave={editProduct ? handleEdit : handleCreate}
-        initialData={editProduct}
-      />
+      {showForm && (
+        <ProductForm
+          key={editProduct?._id || editProduct?.id || 'new'}
+          isOpen={showForm}
+          onClose={() => { setShowForm(false); setEditProduct(null) }}
+          onSave={editProduct ? handleEdit : handleCreate}
+          initialData={editProduct}
+        />
+      )}
     </div>
   )
 }

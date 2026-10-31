@@ -2,29 +2,75 @@ import { useState, useEffect } from 'react'
 import Modal from '../../components/Modal'
 import { getProducts } from '../../api/products'
 
+function toInputDate(val) {
+  if (!val) return ''
+  if (typeof val === 'string') {
+    const match = val.match(/^(\d{4}-\d{2}-\d{2})/)
+    if (match) return match[1]
+  }
+  try {
+    const d = new Date(val)
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().slice(0, 10)
+    }
+  } catch (e) {}
+  return ''
+}
+
 export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
   const isEdit = !!initialData
-  const [form, setForm] = useState(
-    initialData
-      ? { ...initialData }
-      : {
-          name: '',
-          product_id: '',
-          billing_cycle: 'monthly',
-          price: '',
-          min_qty: 1,
-          start_date: '',
-          end_date: '',
-          allow_pause: false,
-          allow_early_close: false,
-          allow_renewal: true,
-          auto_close: false,
-          is_active: true,
-        }
-  )
+  const [form, setForm] = useState({
+    name: '',
+    product_id: '',
+    billing_cycle: 'monthly',
+    price: '',
+    min_qty: 1,
+    start_date: '',
+    end_date: '',
+    allow_pause: false,
+    allow_early_close: false,
+    allow_renewal: true,
+    auto_close: false,
+    is_active: true,
+  })
   const [products, setProducts] = useState([])
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (initialData) {
+      setForm({
+        name: initialData.name || '',
+        product_id: initialData.product_id || '',
+        billing_cycle: initialData.billing_cycle || 'monthly',
+        price: initialData.price !== undefined && initialData.price !== null ? initialData.price : '',
+        min_qty: initialData.min_qty || 1,
+        start_date: toInputDate(initialData.start_date),
+        end_date: toInputDate(initialData.end_date),
+        allow_pause: Boolean(initialData.allow_pause),
+        allow_early_close: Boolean(initialData.allow_early_close),
+        allow_renewal: initialData.allow_renewal !== undefined ? Boolean(initialData.allow_renewal) : true,
+        auto_close: Boolean(initialData.auto_close),
+        is_active: initialData.is_active !== undefined ? Boolean(initialData.is_active) : true,
+      })
+    } else {
+      setForm({
+        name: '',
+        product_id: '',
+        billing_cycle: 'monthly',
+        price: '',
+        min_qty: 1,
+        start_date: '',
+        end_date: '',
+        allow_pause: false,
+        allow_early_close: false,
+        allow_renewal: true,
+        auto_close: false,
+        is_active: true,
+      })
+    }
+    setErrors({})
+  }, [initialData, isOpen])
 
   useEffect(() => {
     if (isOpen) {
@@ -65,6 +111,8 @@ export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
         product_id: Number(form.product_id),
         price: parseFloat(form.price) || 0,
         min_qty: parseInt(form.min_qty) || 1,
+        start_date: form.start_date ? toInputDate(form.start_date) : null,
+        end_date: form.end_date ? toInputDate(form.end_date) : null,
         auto_close: form.auto_close ? 1 : 0,
         allow_pause: form.allow_pause ? 1 : 0,
         allow_early_close: form.allow_early_close ? 1 : 0,
@@ -82,17 +130,28 @@ export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Edit Plan' : 'Add Plan'} size="lg">
       <form onSubmit={handleSubmit}>
-        {errors.api && <div className="alert alert-error">{errors.api}</div>}
+        {errors.api && <div className="alert alert-error" style={{ marginBottom: 16 }}>{errors.api}</div>}
 
         <div className="form-row">
           <div className="form-group">
             <label>Plan Name *</label>
-            <input name="name" value={form.name} onChange={handleChange} placeholder="e.g. Monthly Basic" />
+            <input
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              placeholder="e.g. Monthly Basic"
+              style={errors.name ? { borderColor: 'var(--danger)' } : {}}
+            />
             {errors.name && <span className="field-error">{errors.name}</span>}
           </div>
           <div className="form-group">
             <label>Product *</label>
-            <select name="product_id" value={form.product_id} onChange={handleChange}>
+            <select
+              name="product_id"
+              value={form.product_id}
+              onChange={handleChange}
+              style={errors.product_id ? { borderColor: 'var(--danger)' } : {}}
+            >
               <option value="">Select product...</option>
               {products.map((p) => (
                 <option key={p._id || p.id} value={p._id || p.id}>{p.name}</option>
@@ -114,7 +173,15 @@ export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
           </div>
           <div className="form-group">
             <label>Price (₹) *</label>
-            <input name="price" type="number" step="0.01" value={form.price} onChange={handleChange} placeholder="0.00" />
+            <input
+              name="price"
+              type="number"
+              step="0.01"
+              value={form.price}
+              onChange={handleChange}
+              placeholder="0.00"
+              style={errors.price ? { borderColor: 'var(--danger)' } : {}}
+            />
             {errors.price && <span className="field-error">{errors.price}</span>}
           </div>
         </div>
@@ -130,11 +197,21 @@ export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
         <div className="form-row">
           <div className="form-group">
             <label>Start Date</label>
-            <input name="start_date" type="date" value={form.start_date?.split?.('T')?.[0] || form.start_date || ''} onChange={handleChange} />
+            <input
+              name="start_date"
+              type="date"
+              value={toInputDate(form.start_date)}
+              onChange={handleChange}
+            />
           </div>
           <div className="form-group">
             <label>End Date</label>
-            <input name="end_date" type="date" value={form.end_date?.split?.('T')?.[0] || form.end_date || ''} onChange={handleChange} />
+            <input
+              name="end_date"
+              type="date"
+              value={toInputDate(form.end_date)}
+              onChange={handleChange}
+            />
           </div>
         </div>
 

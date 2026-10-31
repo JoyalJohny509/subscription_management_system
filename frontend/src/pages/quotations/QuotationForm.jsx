@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { createQuotation } from '../../api/quotations'
+import { useNavigate, useParams } from 'react-router-dom'
+import { createQuotation, getQuotationById, updateQuotation } from '../../api/quotations'
 import { getUsers } from '../../api/users'
 import { getProducts } from '../../api/products'
 import { getPlans } from '../../api/plans'
@@ -8,6 +8,8 @@ import { getPlans } from '../../api/plans'
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
 export default function QuotationForm() {
+  const { id } = useParams()
+  const isEdit = !!id
   const navigate = useNavigate()
   const [customers, setCustomers] = useState([])
   const [products, setProducts] = useState([])
@@ -34,14 +36,35 @@ export default function QuotationForm() {
         setCustomers(cRes.data.data || cRes.data || [])
         setProducts(pRes.data.data || pRes.data || [])
         setPlans(plRes.data.data || plRes.data || [])
+
+        if (id) {
+          const qRes = await getQuotationById(id)
+          const q = qRes.data.data || qRes.data
+          if (q) {
+            setCustomerId(q.customer_id)
+            setValidityDays(q.validity_days || 30)
+            setNotes(q.notes || '')
+            if (Array.isArray(q.lines) && q.lines.length > 0) {
+              setLines(
+                q.lines.map((l) => ({
+                  product_id: l.product_id,
+                  plan_id: l.plan_id || '',
+                  qty: l.qty || 1,
+                  unit_price: l.unit_price !== undefined ? l.unit_price : 0,
+                  tax_pct: l.tax_pct !== undefined ? l.tax_pct : 18,
+                }))
+              )
+            }
+          }
+        }
       } catch (err) {
-        setError('Failed to load customers or products.')
+        setError(err.response?.data?.error || err.response?.data?.message || 'Failed to load data.')
       } finally {
         setLoading(false)
       }
     }
     loadData()
-  }, [])
+  }, [id])
 
   const handleProductChange = (index, prodId) => {
     const prod = products.find((p) => String(p.id) === String(prodId))
@@ -78,7 +101,6 @@ export default function QuotationForm() {
     setLines(lines.filter((_, i) => i !== index))
   }
 
-  // Calculate totals
   let subtotal = 0
   let taxTotal = 0
   lines.forEach((l) => {
@@ -96,7 +118,7 @@ export default function QuotationForm() {
       return
     }
     if (lines.some((l) => !l.product_id)) {
-      setError('Please select a product for each line item.')
+      setError('Please select a product for all line items.')
       return
     }
 
@@ -115,10 +137,16 @@ export default function QuotationForm() {
           tax_pct: parseFloat(l.tax_pct) || 0,
         })),
       }
-      const res = await createQuotation(payload)
-      navigate('/quotations')
+      if (isEdit) {
+        await updateQuotation(id, payload)
+        navigate(`/quotations/${id}`)
+      } else {
+        const res = await createQuotation(payload)
+        const newId = res.data.data?.id || res.data.id
+        navigate(newId ? `/quotations/${newId}` : '/quotations')
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create quotation.')
+      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to save quotation.')
     } finally {
       setSaving(false)
     }
@@ -130,12 +158,12 @@ export default function QuotationForm() {
     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
       <div className="page-header">
         <div>
-          <h2>Create Quotation</h2>
+          <h2>{isEdit ? 'Edit Quotation' : 'Create Quotation'}</h2>
           <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
-            Generate a new pricing proposal for a customer
+            {isEdit ? 'Update pricing proposal terms and line items' : 'Generate a new pricing proposal for a customer'}
           </p>
         </div>
-        <button className="btn btn-secondary" onClick={() => navigate('/quotations')}>
+        <button className="btn btn-secondary" onClick={() => navigate(isEdit ? `/quotations/${id}` : '/quotations')}>
           Cancel
         </button>
       </div>
@@ -151,6 +179,7 @@ export default function QuotationForm() {
               <select
                 value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
+                disabled={isEdit}
                 required
               >
                 <option value="">Select a Customer</option>
@@ -205,7 +234,7 @@ export default function QuotationForm() {
                 }}
               >
                 <div>
-                  <label style={{ fontSize: '0.75rem' }}>Product</label>
+                  <label style={{ fontSize: '0.75rem' }}>Product *</label>
                   <select
                     value={line.product_id}
                     onChange={(e) => handleProductChange(idx, e.target.value)}
@@ -224,11 +253,9 @@ export default function QuotationForm() {
                     value={line.plan_id}
                     onChange={(e) => handlePlanChange(idx, e.target.value)}
                   >
-                    <option value="">Default Price</option>
+                    <option value="">No Plan</option>
                     {plans.map((pl) => (
-                      <option key={pl.id} value={pl.id}>
-                        {pl.name} ({pl.billing_cycle})
-                      </option>
+                      <option key={pl.id} value={pl.id}>{pl.name} ({fmt(pl.price)})</option>
                     ))}
                   </select>
                 </div>
@@ -297,11 +324,11 @@ export default function QuotationForm() {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-          <button type="button" className="btn btn-secondary" onClick={() => navigate('/quotations')}>
+          <button type="button" className="btn btn-secondary" onClick={() => navigate(isEdit ? `/quotations/${id}` : '/quotations')}>
             Cancel
           </button>
           <button type="submit" className="btn btn-primary" disabled={saving}>
-            {saving ? 'Saving...' : 'Create Quotation'}
+            {saving ? 'Saving...' : isEdit ? 'Update Quotation' : 'Create Quotation'}
           </button>
         </div>
       </form>

@@ -31,8 +31,28 @@ export default function Register() {
 
   const handleChange = (e) => {
     const { name, value } = e.target
+    if (name === 'phone') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 10)
+      setForm((f) => ({ ...f, phone: digitsOnly }))
+      setErrors((errs) => ({ ...errs, phone: '' }))
+      return
+    }
     setForm((f) => ({ ...f, [name]: value }))
     setErrors((errs) => ({ ...errs, [name]: '' }))
+  }
+
+  const handlePhoneKeyDown = (e) => {
+    // Allow control and navigation keys
+    if (
+      ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key) ||
+      (e.ctrlKey || e.metaKey)
+    ) {
+      return
+    }
+    // Block any non-digit character
+    if (!/^[0-9]$/.test(e.key)) {
+      e.preventDefault()
+    }
   }
 
   const validate = () => {
@@ -40,6 +60,9 @@ export default function Register() {
     if (!form.name.trim()) errs.name = 'Name is required'
     if (!form.email.trim()) errs.email = 'Email is required'
     else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Invalid email'
+    if (form.phone && form.phone.length !== 10) {
+      errs.phone = 'Phone number must be exactly 10 digits'
+    }
     if (!form.password) errs.password = 'Password is required'
     else if (form.password.length < 8) errs.password = 'Min 8 characters'
     else if (!/[A-Z]/.test(form.password)) errs.password = 'Needs uppercase letter'
@@ -66,7 +89,16 @@ export default function Register() {
       })
       navigate('/login')
     } catch (err) {
-      setApiError(err.response?.data?.error || err.response?.data?.message || 'Registration failed. Please try again.')
+      const serverMsg = err.response?.data?.error || err.response?.data?.message || 'Registration failed. Please try again.'
+      const details = err.response?.data?.details
+      if (Array.isArray(details)) {
+        const fieldErrors = {}
+        details.forEach((d) => {
+          if (d.field) fieldErrors[d.field] = d.message
+        })
+        setErrors((prev) => ({ ...prev, ...fieldErrors }))
+      }
+      setApiError(serverMsg)
     } finally {
       setLoading(false)
     }
@@ -125,8 +157,18 @@ export default function Register() {
                 <input name="company_name" value={form.company_name} onChange={handleChange} placeholder="Acme Inc." />
               </div>
               <div className="form-group">
-                <label>Phone</label>
-                <input name="phone" value={form.phone} onChange={handleChange} placeholder="+91 98765 43210" />
+                <label>Phone Number</label>
+                <input
+                  name="phone"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={10}
+                  value={form.phone}
+                  onChange={handleChange}
+                  onKeyDown={handlePhoneKeyDown}
+                  placeholder="10-digit mobile number"
+                />
+                {errors.phone && <span className="field-error">{errors.phone}</span>}
               </div>
             </div>
 

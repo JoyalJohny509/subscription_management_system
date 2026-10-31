@@ -16,7 +16,14 @@ const passwordSchema = z
 const registerSchema = z.object({
     name: z.string().trim().min(1, 'Name is required'),
     email: z.string().trim().email('Enter a valid email'),
-    password: passwordSchema
+    password: passwordSchema,
+    company_name: z.string().optional().nullable(),
+    phone: z
+        .string()
+        .regex(/^\d{10}$/, 'Phone number must be exactly 10 digits')
+        .optional()
+        .nullable()
+        .or(z.literal(''))
 });
 
 // Login validation
