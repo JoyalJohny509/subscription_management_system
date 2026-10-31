@@ -2,6 +2,8 @@ const express = require('express');
 const db = require('../db/database');
 const { authenticate } = require('../middleware/auth');
 const { authorize } = require('../middleware/rbac');
+const { generateInvoicePdf } = require('../services/pdfGenerator');
+const { sendInvoiceEmail } = require('../services/emailService');
 
 const router = express.Router();
 router.use(authenticate);
@@ -200,6 +202,79 @@ router.get('/:id/print', (req, res) => {
 
   const lines = db.prepare('SELECT * FROM invoice_lines WHERE invoice_id = ?').all(req.params.id);
   return res.json({ data: { ...invoice, lines }, message: 'Print data ready' });
+});
+
+// ── GET /api/invoices/:id/pdf ─────────────────────────────────────────────────
+// Generate and download PDF invoice with customer details, GST, and total amount
+router.get('/:id/pdf', (req, res) => {
+  try {
+    const invoice = db.prepare(`
+      SELECT i.*,
+             c.company_name, c.phone AS customer_phone, c.address AS customer_address,
+             u.name AS customer_name, u.email AS customer_email,
+             s.sub_number, s.start_date AS sub_start, s.expiry_date AS sub_expiry,
+             pl.name AS plan_name, pl.billing_cycle
+      FROM invoices i
+      JOIN customers c ON c.id = i.customer_id
+      JOIN users u ON u.id = c.user_id
+      JOIN subscriptions s ON s.id = i.subscription_id
+      JOIN plans pl ON pl.id = s.plan_id
+      WHERE i.id = ?
+    `).get(req.params.id);
+
+    if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+
+    if (req.user.role === 'customer') {
+      const cust = db.prepare('SELECT user_id FROM customers WHERE id = ?').get(invoice.customer_id);
+      if (!cust || cust.user_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const lines = db.prepare('SELECT * FROM invoice_lines WHERE invoice_id = ?').all(req.params.id);
+
+    generateInvoicePdf(invoice, lines, res);
+  } catch (err) {
+    console.error('[PDF Generation Error]', err);
+    if (!res.headersSent) {
+      return res.status(500).json({ error: 'Failed to generate PDF' });
+    }
+  }
+});
+
+// ── POST /api/invoices/:id/send-email ─────────────────────────────────────────
+// Send invoice email to customer
+router.post('/:id/send-email', authorize('admin', 'staff'), async (req, res) => {
+  try {
+    const invoice = db.prepare(`
+      SELECT i.*, c.company_name, u.name AS customer_name, u.email AS customer_email
+      FROM invoices i
+      JOIN customers c ON c.id = i.customer_id
+      JOIN users u ON u.id = c.user_id
+      WHERE i.id = ?
+    `).get(req.params.id);
+
+    if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+
+    if (!invoice.customer_email) {
+      return res.status(400).json({ error: 'Customer email not available' });
+    }
+
+    const lines = db.prepare('SELECT * FROM invoice_lines WHERE invoice_id = ?').all(req.params.id);
+
+    const result = await sendInvoiceEmail({
+      to: invoice.customer_email,
+      customerName: invoice.customer_name,
+      invoice,
+      lines,
+    });
+
+    return res.json({
+      data: result,
+      message: `Invoice email sent to ${invoice.customer_email}`,
+    });
+  } catch (err) {
+    console.error('[Email Error]', err);
+    return res.status(500).json({ error: 'Failed to send invoice email' });
+  }
 });
 
 // ── POST /api/invoices/:id/apply-discount ─────────────────────────────────────

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getInvoices, confirmInvoice, cancelInvoice } from '../../api/invoices'
+import { getInvoices, confirmInvoice, cancelInvoice, downloadInvoicePdf } from '../../api/invoices'
 import { useAuth } from '../../context/AuthContext'
 import DataTable from '../../components/DataTable'
 import Badge from '../../components/Badge'
@@ -18,6 +18,7 @@ export default function InvoiceList() {
   const [success, setSuccess] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [downloadingId, setDownloadingId] = useState(null)
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true)
@@ -61,6 +62,28 @@ export default function InvoiceList() {
       fetchInvoices()
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to cancel invoice.')
+    }
+  }
+
+  const handleDownloadPdf = async (inv) => {
+    setDownloadingId(inv.id)
+    setError('')
+    try {
+      const res = await downloadInvoicePdf(inv.id)
+      const blob = new Blob([res.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${inv.invoice_number || `INV-${String(inv.id).padStart(4, '0')}`}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      setSuccess(`Downloaded ${inv.invoice_number || `INV-${inv.id}`}.pdf`)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to download PDF.')
+    } finally {
+      setDownloadingId(null)
     }
   }
 
@@ -116,6 +139,13 @@ export default function InvoiceList() {
             onClick={() => navigate(`/invoices/${row.id}`)}
           >
             View
+          </button>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => handleDownloadPdf(row)}
+            disabled={downloadingId === row.id}
+          >
+            {downloadingId === row.id ? '...' : 'PDF'}
           </button>
           {isStaff() && row.status === 'draft' && (
             <button

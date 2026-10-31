@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Modal from '../../components/Modal'
 import { getInvoices } from '../../api/invoices'
+import { getUpiQrCode, processWebhook } from '../../api/payments'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -13,6 +14,12 @@ export default function PaymentForm({ isOpen, onClose, onSave, initialInvoiceId,
   const [notes, setNotes] = useState('')
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+
+  // UPI QR state
+  const [qrData, setQrData] = useState(null)
+  const [qrLoading, setQrLoading] = useState(false)
+  const [simulating, setSimulating] = useState(false)
+  const [simSuccess, setSimSuccess] = useState('')
 
   useEffect(() => {
     if (isOpen) {
@@ -29,6 +36,25 @@ export default function PaymentForm({ isOpen, onClose, onSave, initialInvoiceId,
       }).catch(() => {})
     }
   }, [isOpen, initialInvoiceId, initialAmount])
+
+  // Load QR code whenever invoice or method is UPI
+  useEffect(() => {
+    if (isOpen && method === 'upi' && invoiceId) {
+      setQrLoading(true)
+      getUpiQrCode(invoiceId)
+        .then((res) => {
+          setQrData(res.data.data || res.data)
+        })
+        .catch(() => {
+          setQrData(null)
+        })
+        .finally(() => {
+          setQrLoading(false)
+        })
+    } else {
+      setQrData(null)
+    }
+  }, [isOpen, method, invoiceId])
 
   const handleInvoiceChange = (id) => {
     setInvoiceId(id)
@@ -66,10 +92,36 @@ export default function PaymentForm({ isOpen, onClose, onSave, initialInvoiceId,
     }
   }
 
+  // Simulate payment via Mock Webhook
+  const handleSimulatePayment = async () => {
+    const errs = validate()
+    if (Object.keys(errs).length) { setErrors(errs); return }
+    setSimulating(true)
+    setErrors({})
+    try {
+      const res = await processWebhook({
+        invoice_id: parseInt(invoiceId),
+        amount: parseFloat(amount) || 0,
+        method,
+        status: 'completed',
+        transaction_id: `SIM-${Date.now()}`,
+      })
+      setSimSuccess('Payment simulated successfully! Invoice updated to paid.')
+      setTimeout(() => {
+        onClose()
+      }, 1200)
+    } catch (err) {
+      setErrors({ form: err.response?.data?.error || 'Webhook simulation failed' })
+    } finally {
+      setSimulating(false)
+    }
+  }
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Record Customer Payment">
       <form onSubmit={handleSubmit}>
         {errors.form && <div className="alert alert-danger" style={{ marginBottom: 16 }}>{errors.form}</div>}
+        {simSuccess && <div className="alert alert-success" style={{ marginBottom: 16 }}>{simSuccess}</div>}
 
         <div className="form-group">
           <label>Select Invoice *</label>
@@ -113,6 +165,39 @@ export default function PaymentForm({ isOpen, onClose, onSave, initialInvoiceId,
           </div>
         </div>
 
+        {/* UPI QR Display when UPI is selected */}
+        {method === 'upi' && invoiceId && (
+          <div style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border)',
+            borderRadius: '8px',
+            padding: '16px',
+            marginBottom: '16px',
+            textAlign: 'center'
+          }}>
+            <h4 style={{ margin: '0 0 10px 0' }}>Scan UPI QR to Pay</h4>
+            {qrLoading ? (
+              <p style={{ color: 'var(--text-secondary)' }}>Generating UPI QR Code...</p>
+            ) : qrData ? (
+              <div>
+                <img
+                  src={qrData.qr_code}
+                  alt="UPI QR Code"
+                  style={{ width: 180, height: 180, margin: '0 auto', display: 'block', background: '#fff', padding: 8, borderRadius: 6 }}
+                />
+                <p style={{ margin: '8px 0 2px 0', fontSize: '0.9rem', fontWeight: 600 }}>
+                  Amount: {fmt(qrData.amount)}
+                </p>
+                <small style={{ color: 'var(--text-secondary)' }}>
+                  Pay to: {qrData.payee_name} ({qrData.payee_vpa})
+                </small>
+              </div>
+            ) : (
+              <p style={{ color: 'var(--danger)', fontSize: '0.85rem' }}>Could not load QR code</p>
+            )}
+          </div>
+        )}
+
         <div className="grid-2">
           <div className="form-group">
             <label>Payment Date</label>
@@ -135,13 +220,24 @@ export default function PaymentForm({ isOpen, onClose, onSave, initialInvoiceId,
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20 }}>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Cancel
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleSimulatePayment}
+            disabled={simulating || loading || !invoiceId}
+            title="Simulate successful payment via mock gateway webhook"
+          >
+            {simulating ? 'Simulating...' : '⚡ Simulate Mock Webhook'}
           </button>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Recording...' : 'Record Payment'}
-          </button>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={loading || simulating}>
+              {loading ? 'Recording...' : 'Record Payment'}
+            </button>
+          </div>
         </div>
       </form>
     </Modal>
