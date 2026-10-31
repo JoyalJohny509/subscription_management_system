@@ -1,3 +1,5 @@
+import React from 'react'
+
 export default function DataTable({ columns, data, loading, emptyMessage }) {
   if (loading) {
     return (
@@ -10,33 +12,38 @@ export default function DataTable({ columns, data, loading, emptyMessage }) {
 
   const renderCell = (col, row) => {
     if (!col.render) {
-      return row[col.key] ?? <span className="text-muted">—</span>
+      const v = row[col.key]
+      if (v && typeof v === 'object') return <span className="text-muted">—</span>
+      return v ?? <span className="text-muted">—</span>
     }
 
     const val = row[col.key]
+    let result
 
-    // If the key is a virtual column (e.g. 'actions', 'customer', 'period', etc.)
-    // and val is undefined, invoke render directly with the whole row object.
     if (val === undefined) {
       try {
-        return col.render(row, row)
+        result = col.render(row, row)
       } catch (err) {
-        return <span className="text-muted">—</span>
+        result = <span className="text-muted">—</span>
+      }
+    } else {
+      try {
+        result = col.render(val, row)
+      } catch (err) {
+        try {
+          result = col.render(row, val)
+        } catch (err2) {
+          result = <span className="text-muted">—</span>
+        }
       }
     }
 
-    // Try calling with (val, row) first
-    try {
-      return col.render(val, row)
-    } catch (err) {
-      // If render expects (row), retry with (row, val)
-      try {
-        return col.render(row, val)
-      } catch (err2) {
-        console.error('DataTable render error:', err2)
-        return <span className="text-muted">—</span>
-      }
+    // Safety guard: prevent raw Objects from rendering as JSX children which causes React fatal crashes
+    if (result && typeof result === 'object' && !React.isValidElement(result)) {
+      return <span className="text-muted">—</span>
     }
+
+    return result ?? <span className="text-muted">—</span>
   }
 
   return (
