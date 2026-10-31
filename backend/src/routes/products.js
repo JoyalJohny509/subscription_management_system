@@ -8,17 +8,23 @@ router.use(authenticate);
 
 // ── GET /api/products ──────────────────────────────────────────────────────────
 router.get('/', (req, res) => {
-  const { is_active } = req.query;
+  const { is_active, search } = req.query;
   let sql = `
     SELECT p.*,
-           COUNT(v.id) AS variant_count
+           COUNT(v.id) AS variant_count,
+           COUNT(v.id) AS variants_count
     FROM products p
     LEFT JOIN product_variants v ON v.product_id = p.id AND v.is_active = 1
+    WHERE 1=1
   `;
   const params = [];
   if (is_active !== undefined) {
-    sql += ` WHERE p.is_active = ?`;
+    sql += ` AND p.is_active = ?`;
     params.push(Number(is_active));
+  }
+  if (search) {
+    sql += ` AND (p.name LIKE ? OR p.type LIKE ?)`;
+    params.push(`%${search}%`, `%${search}%`);
   }
   sql += ` GROUP BY p.id ORDER BY p.id`;
 
@@ -27,7 +33,7 @@ router.get('/', (req, res) => {
 });
 
 // ── POST /api/products ─────────────────────────────────────────────────────────
-router.post('/', authorize('admin'), (req, res) => {
+router.post('/', authorize('admin', 'staff'), (req, res) => {
   const { name, type, sales_price, cost_price, notes } = req.body;
   if (!name) return res.status(400).json({ error: 'name is required' });
 
@@ -49,7 +55,7 @@ router.get('/:id', (req, res) => {
 });
 
 // ── PUT /api/products/:id ─────────────────────────────────────────────────────
-router.put('/:id', authorize('admin'), (req, res) => {
+router.put('/:id', authorize('admin', 'staff'), (req, res) => {
   const product = db.prepare('SELECT id FROM products WHERE id = ?').get(req.params.id);
   if (!product) return res.status(404).json({ error: 'Product not found' });
 
@@ -89,7 +95,7 @@ router.get('/:id/variants', (req, res) => {
 });
 
 // ── POST /api/products/:id/variants ──────────────────────────────────────────
-router.post('/:id/variants', authorize('admin'), (req, res) => {
+router.post('/:id/variants', authorize('admin', 'staff'), (req, res) => {
   const product = db.prepare('SELECT id FROM products WHERE id = ?').get(req.params.id);
   if (!product) return res.status(404).json({ error: 'Product not found' });
 
@@ -105,7 +111,7 @@ router.post('/:id/variants', authorize('admin'), (req, res) => {
 });
 
 // ── PUT /api/products/:id/variants/:vid ──────────────────────────────────────
-router.put('/:id/variants/:vid', authorize('admin'), (req, res) => {
+router.put('/:id/variants/:vid', authorize('admin', 'staff'), (req, res) => {
   const variant = db.prepare('SELECT * FROM product_variants WHERE id = ? AND product_id = ?').get(req.params.vid, req.params.id);
   if (!variant) return res.status(404).json({ error: 'Variant not found' });
 

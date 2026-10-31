@@ -31,7 +31,7 @@ export default function ProductList() {
       setProducts(data.products || data.data || data)
       if (data.totalPages) setTotalPages(data.totalPages)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load products.')
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to load products.')
     } finally {
       setLoading(false)
     }
@@ -55,38 +55,68 @@ export default function ProductList() {
       await deleteProduct(product._id || product.id)
       fetchProducts()
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete product.')
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to delete product.')
     }
   }
 
   const columns = [
     {
-      key: 'name', label: 'Name',
-      render: (v, row) => (
+      key: 'name',
+      label: 'Name',
+      render: (_, row) => (
         <button
           className="btn-link"
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-primary)', fontWeight: 600, padding: 0 }}
-          onClick={() => navigate(`/products/${row._id || row.id}`)}
+          onClick={() => navigate(`/products/${row?.id || row?._id}`)}
         >
-          {v}
+          {row?.name || '—'}
         </button>
       ),
     },
-    { key: 'type', label: 'Type', render: (v) => v || <span className="text-muted">—</span> },
-    { key: 'sales_price', label: 'Sales Price', render: (v) => fmt(v) },
-    { key: 'cost_price', label: 'Cost Price', render: (v) => fmt(v) },
-    { key: 'variants_count', label: 'Variants', render: (v) => v ?? 0 },
-    { key: 'is_active', label: 'Status', render: (v) => <Badge status={v !== false ? 'active' : 'closed'} /> },
     {
-      key: 'actions', label: 'Actions',
+      key: 'type',
+      label: 'Type',
+      render: (_, row) => (
+        <span style={{ textTransform: 'capitalize' }}>{row?.type || <span className="text-muted">—</span>}</span>
+      ),
+    },
+    {
+      key: 'sales_price',
+      label: 'Sales Price',
+      render: (_, row) => fmt(row?.sales_price),
+    },
+    {
+      key: 'cost_price',
+      label: 'Cost Price',
+      render: (_, row) => fmt(row?.cost_price),
+    },
+    {
+      key: 'variant_count',
+      label: 'Variants',
+      render: (_, row) => (row?.variant_count ?? row?.variants_count ?? 0),
+    },
+    {
+      key: 'is_active',
+      label: 'Status',
+      render: (_, row) => <Badge status={(row?.is_active !== 0 && row?.is_active !== false) ? 'active' : 'closed'} />,
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
       render: (_, row) => (
         <div className="table-actions">
-          <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/products/${row._id || row.id}`)}>View</button>
+          <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/products/${row?.id || row?._id}`)}>
+            View
+          </button>
           {isStaff() && (
-            <button className="btn btn-secondary btn-sm" onClick={() => { setEditProduct(row); setShowForm(true) }}>✏️ Edit</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => { setEditProduct(row); setShowForm(true) }}>
+              ✏️ Edit
+            </button>
           )}
           {isAdmin() && (
-            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(row)}>🗑️</button>
+            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(row)}>
+              🗑️
+            </button>
           )}
         </div>
       ),
@@ -101,7 +131,9 @@ export default function ProductList() {
           <p className="page-subtitle">Manage your product catalog</p>
         </div>
         {isStaff() && (
-          <button className="btn btn-primary" onClick={() => { setEditProduct(null); setShowForm(true) }}>+ Add Product</button>
+          <button className="btn btn-primary" onClick={() => { setEditProduct(null); setShowForm(true) }}>
+            + Add Product
+          </button>
         )}
       </div>
 
