@@ -2,6 +2,9 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db/database');
 const { generateToken } = require('../middleware/auth');
+const { registerSchema, loginSchema } = require('../validations/authValidation');
+const validate = require('../middleware/validate');
+const { authRateLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
@@ -17,7 +20,7 @@ function validatePassword(password) {
 }
 
 // ── POST /api/auth/register ───────────────────────────────────────────────────
-router.post('/register', (req, res) => {
+router.post('/register', authRateLimiter, validate(registerSchema), (req, res) => {
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
@@ -48,7 +51,7 @@ router.post('/register', (req, res) => {
 });
 
 // ── POST /api/auth/login ──────────────────────────────────────────────────────
-router.post('/login', (req, res) => {
+router.post('/login', authRateLimiter, validate(loginSchema), (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {

@@ -29,7 +29,7 @@ router.get('/', (req, res) => {
   `;
   const params = [];
   if (billing_cycle) { sql += ` AND pl.billing_cycle = ?`; params.push(billing_cycle); }
-  if (product_id)    { sql += ` AND pl.product_id = ?`;   params.push(product_id); }
+  if (product_id) { sql += ` AND pl.product_id = ?`; params.push(product_id); }
   sql += ` ORDER BY pl.id`;
 
   const plans = db.prepare(sql).all(...params);
@@ -94,7 +94,7 @@ router.put('/:id', authorize('admin'), (req, res) => {
   if (!plan) return res.status(404).json({ error: 'Plan not found' });
 
   const { name, billing_cycle, price, min_qty, start_date, end_date,
-          auto_close, allow_pause, allow_early_close, allow_renewal, is_active } = req.body;
+    auto_close, allow_pause, allow_early_close, allow_renewal, is_active } = req.body;
 
   if (billing_cycle && !VALID_CYCLES.includes(billing_cycle)) {
     return res.status(400).json({ error: `billing_cycle must be one of: ${VALID_CYCLES.join(', ')}` });
