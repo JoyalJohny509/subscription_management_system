@@ -36,7 +36,7 @@ function RevenueChart({ data }) {
           padding: '0 10px',
           minWidth: '280px',
           position: 'relative',
-          backgroundImage: 'linear-gradient(to top, rgba(255, 255, 255, 0.04) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(to top, var(--border) 1px, transparent 1px)',
           backgroundSize: '100% 45px',
         }}
       >
@@ -215,7 +215,7 @@ export default function Dashboard() {
       </div>
 
       {/* Advanced Recurring Revenue KPI Strip (MRR & ARR) */}
-      <div className="card" style={{ marginBottom: '24px', background: 'linear-gradient(90deg, rgba(30, 41, 59, 0.9) 0%, rgba(99, 102, 241, 0.08) 100%)' }}>
+      <div className="card kpi-card">
         <div className="kpi-strip">
           <div className="kpi-item">
             <div className="kpi-label">

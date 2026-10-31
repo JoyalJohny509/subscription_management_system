@@ -5,8 +5,9 @@ const ThemeContext = createContext()
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('brightloop_theme')
-    if (saved) return saved
-    return 'dark'
+    // Prioritise light mode
+    if (saved === 'dark' || saved === 'light') return saved
+    return 'light'
   })
 
   useEffect(() => {
