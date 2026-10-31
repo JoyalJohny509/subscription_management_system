@@ -7,9 +7,10 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "seed": "node src/db/seed.js",
-    "test": "jest --runInBand"
+    "migrate": "node src/db/migrator.js",
+    "test": "jest --runInBand",
+    "test:billing": "node test_billing_cron.js && node test_proration_service.js"
   },
-
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^11.8.1",
@@ -17,6 +18,10 @@
     "express": "^4.18.2",
     "express-rate-limit": "^8.7.2",
     "jsonwebtoken": "^9.0.2",
+    "node-cron": "^4.6.0",
+    "nodemailer": "^10.3.1",
+    "pdfkit": "^0.20.2",
+    "qrcode": "^1.5.4",
     "zod": "^4.6.7"
   },
   "devDependencies": {

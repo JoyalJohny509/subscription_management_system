@@ -12,3 +12,6 @@ export const confirmSubscription = (id) => api.post(`/subscriptions/${id}/confir
 export const pauseSubscription = (id) => api.post(`/subscriptions/${id}/pause`)
 export const closeSubscription = (id) => api.post(`/subscriptions/${id}/close`)
 export const generateInvoice = (id) => api.post(`/subscriptions/${id}/generate-invoice`)
+export const upgradeSeats = (id, data) => api.post(`/subscriptions/${id}/upgrade-seats`, data)
+export const addAddon = (id, data) => api.post(`/subscriptions/${id}/add-addon`, data)
+export const triggerBillingCron = (data = {}) => api.post('/subscriptions/trigger-billing-cron', data)

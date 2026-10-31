@@ -28,22 +28,29 @@ export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
 
   useEffect(() => {
     if (isOpen) {
-      getProducts({ limit: 100 }).then((res) => {
-        setProducts(res.data.products || res.data.data || res.data)
-      }).catch(() => {})
+      getProducts({ limit: 100 })
+        .then((res) => {
+          const list = res.data.products || res.data.data || res.data || []
+          setProducts(list)
+          if (!isEdit && list.length > 0 && !form.product_id) {
+            setForm((f) => ({ ...f, product_id: f.product_id || list[0].id || list[0]._id }))
+          }
+        })
+        .catch(() => {})
     }
-  }, [isOpen])
+  }, [isOpen, isEdit])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
     setForm((f) => ({ ...f, [name]: type === 'checkbox' ? checked : value }))
-    setErrors((errs) => ({ ...errs, [name]: '' }))
+    setErrors((errs) => ({ ...errs, [name]: '', api: '' }))
   }
 
   const validate = () => {
     const errs = {}
     if (!form.name.trim()) errs.name = 'Name is required'
-    if (!form.price) errs.price = 'Price is required'
+    if (!form.product_id) errs.product_id = 'Product is required'
+    if (!form.price && form.price !== 0) errs.price = 'Price is required'
     return errs
   }
 
@@ -55,12 +62,18 @@ export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
     try {
       await onSave({
         ...form,
+        product_id: Number(form.product_id),
         price: parseFloat(form.price) || 0,
         min_qty: parseInt(form.min_qty) || 1,
+        auto_close: form.auto_close ? 1 : 0,
+        allow_pause: form.allow_pause ? 1 : 0,
+        allow_early_close: form.allow_early_close ? 1 : 0,
+        allow_renewal: form.allow_renewal ? 1 : 0,
+        is_active: form.is_active ? 1 : 0,
       })
       onClose()
     } catch (err) {
-      setErrors({ api: err.response?.data?.message || 'Failed to save plan.' })
+      setErrors({ api: err.response?.data?.error || err.response?.data?.message || 'Failed to save plan.' })
     } finally {
       setLoading(false)
     }
@@ -78,13 +91,14 @@ export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
             {errors.name && <span className="field-error">{errors.name}</span>}
           </div>
           <div className="form-group">
-            <label>Product</label>
+            <label>Product *</label>
             <select name="product_id" value={form.product_id} onChange={handleChange}>
               <option value="">Select product...</option>
               {products.map((p) => (
                 <option key={p._id || p.id} value={p._id || p.id}>{p.name}</option>
               ))}
             </select>
+            {errors.product_id && <span className="field-error">{errors.product_id}</span>}
           </div>
         </div>
 
@@ -92,11 +106,10 @@ export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
           <div className="form-group">
             <label>Billing Cycle</label>
             <select name="billing_cycle" value={form.billing_cycle} onChange={handleChange}>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="half_yearly">Half Yearly</option>
-              <option value="annual">Annual</option>
-              <option value="one_time">One Time</option>
+              <option value="yearly">Yearly</option>
             </select>
           </div>
           <div className="form-group">

@@ -27,11 +27,18 @@ export default function ProductList() {
     setError('')
     try {
       const res = await getProducts({ search, page, limit: 20 })
-      const data = res.data
-      setProducts(data.products || data.data || data)
+      const data = res.data || {}
+      const list = Array.isArray(data.products)
+        ? data.products
+        : Array.isArray(data.data)
+        ? data.data
+        : Array.isArray(data)
+        ? data
+        : []
+      setProducts(list)
       if (data.totalPages) setTotalPages(data.totalPages)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load products.')
+      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to load products.')
     } finally {
       setLoading(false)
     }
@@ -55,7 +62,7 @@ export default function ProductList() {
       await deleteProduct(product._id || product.id)
       fetchProducts()
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete product.')
+      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to delete product.')
     }
   }
 
@@ -66,22 +73,33 @@ export default function ProductList() {
         <button
           className="btn-link"
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-primary)', fontWeight: 600, padding: 0 }}
-          onClick={() => navigate(`/products/${row._id || row.id}`)}
+          onClick={() => navigate(`/products/${row?._id || row?.id}`)}
         >
-          {v}
+          {v || row?.name}
         </button>
       ),
     },
-    { key: 'type', label: 'Type', render: (v) => v || <span className="text-muted">—</span> },
-    { key: 'sales_price', label: 'Sales Price', render: (v) => fmt(v) },
-    { key: 'cost_price', label: 'Cost Price', render: (v) => fmt(v) },
-    { key: 'variants_count', label: 'Variants', render: (v) => v ?? 0 },
-    { key: 'is_active', label: 'Status', render: (v) => <Badge status={v !== false ? 'active' : 'closed'} /> },
+    { key: 'type', label: 'Type', render: (v) => (typeof v === 'string' ? v : '') || <span className="text-muted">—</span> },
+    { key: 'sales_price', label: 'Sales Price', render: (v, row) => fmt(typeof v === 'number' ? v : row?.sales_price) },
+    { key: 'cost_price', label: 'Cost Price', render: (v, row) => fmt(typeof v === 'number' ? v : row?.cost_price) },
+    {
+      key: 'variant_count',
+      label: 'Variants',
+      render: (v, row) => (typeof v === 'number' ? v : (row?.variant_count ?? row?.variants_count ?? 0))
+    },
+    {
+      key: 'is_active',
+      label: 'Status',
+      render: (v, row) => {
+        const active = typeof v === 'boolean' || typeof v === 'number' ? Boolean(v) : Boolean(row?.is_active)
+        return <Badge status={active ? 'active' : 'closed'} />
+      }
+    },
     {
       key: 'actions', label: 'Actions',
       render: (_, row) => (
         <div className="table-actions">
-          <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/products/${row._id || row.id}`)}>View</button>
+          <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/products/${row?._id || row?.id}`)}>View</button>
           {isStaff() && (
             <button className="btn btn-secondary btn-sm" onClick={() => { setEditProduct(row); setShowForm(true) }}>✏️ Edit</button>
           )}

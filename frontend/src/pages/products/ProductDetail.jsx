@@ -83,8 +83,9 @@ export default function ProductDetail() {
     setError('')
     try {
       const [pRes, vRes] = await Promise.all([getProductById(id), getVariants(id)])
-      setProduct(pRes.data)
-      setVariants(vRes.data?.variants || vRes.data || [])
+      setProduct(pRes.data?.data || pRes.data)
+      const varList = vRes.data?.data || vRes.data?.variants || vRes.data || []
+      setVariants(Array.isArray(varList) ? varList : [])
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load product.')
     } finally {

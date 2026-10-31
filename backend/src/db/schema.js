@@ -1,4 +1,5 @@
 const db = require('./database');
+const { runMigrations } = require('./migrator');
 
 function initializeDB() {
   // ── Users ──────────────────────────────────────────────────────────────────
@@ -260,6 +261,7 @@ function initializeDB() {
   `);
 
   console.log('✅ Database schema initialized');
+  runMigrations();
 }
 
 module.exports = { initializeDB };

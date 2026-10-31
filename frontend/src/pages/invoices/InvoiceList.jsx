@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getInvoices, confirmInvoice, cancelInvoice } from '../../api/invoices'
+import { getInvoices, confirmInvoice, cancelInvoice, downloadInvoicePdf } from '../../api/invoices'
 import { useAuth } from '../../context/AuthContext'
 import DataTable from '../../components/DataTable'
 import Badge from '../../components/Badge'
@@ -18,6 +18,7 @@ export default function InvoiceList() {
   const [success, setSuccess] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [downloadingId, setDownloadingId] = useState(null)
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true)
@@ -64,11 +65,33 @@ export default function InvoiceList() {
     }
   }
 
+  const handleDownloadPdf = async (inv) => {
+    setDownloadingId(inv.id)
+    setError('')
+    try {
+      const res = await downloadInvoicePdf(inv.id)
+      const blob = new Blob([res.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${inv.invoice_number || `INV-${String(inv.id).padStart(4, '0')}`}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      setSuccess(`Downloaded ${inv.invoice_number || `INV-${inv.id}`}.pdf`)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to download PDF.')
+    } finally {
+      setDownloadingId(null)
+    }
+  }
+
   const columns = [
     {
       key: 'invoice_number',
       label: 'Invoice #',
-      render: (row) => (
+      render: (_, row) => (
         <a
           href={`/invoices/${row.id}`}
           onClick={(e) => { e.preventDefault(); navigate(`/invoices/${row.id}`) }}
@@ -81,7 +104,7 @@ export default function InvoiceList() {
     {
       key: 'customer',
       label: 'Customer',
-      render: (row) => (
+      render: (_, row) => (
         <div>
           <div>{row.customer_name || 'N/A'}</div>
           {row.company_name && (
@@ -90,32 +113,39 @@ export default function InvoiceList() {
         </div>
       ),
     },
-    { key: 'grand_total', label: 'Amount', render: (row) => fmt(row.grand_total) },
+    { key: 'grand_total', label: 'Amount', render: (_, row) => fmt(row.grand_total) },
     {
       key: 'issue_date',
       label: 'Issue Date',
-      render: (row) => (row.issue_date ? new Date(row.issue_date).toLocaleDateString('en-IN') : '-'),
+      render: (_, row) => (row.issue_date ? new Date(row.issue_date).toLocaleDateString('en-IN') : '-'),
     },
     {
       key: 'due_date',
       label: 'Due Date',
-      render: (row) => (row.due_date ? new Date(row.due_date).toLocaleDateString('en-IN') : '-'),
+      render: (_, row) => (row.due_date ? new Date(row.due_date).toLocaleDateString('en-IN') : '-'),
     },
     {
       key: 'status',
       label: 'Status',
-      render: (row) => <Badge status={row.status} />,
+      render: (_, row) => <Badge status={row.status} />,
     },
     {
       key: 'actions',
       label: 'Actions',
-      render: (row) => (
+      render: (_, row) => (
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           <button
             className="btn btn-secondary btn-sm"
             onClick={() => navigate(`/invoices/${row.id}`)}
           >
             View
+          </button>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => handleDownloadPdf(row)}
+            disabled={downloadingId === row.id}
+          >
+            {downloadingId === row.id ? '...' : 'PDF'}
           </button>
           {isStaff() && row.status === 'draft' && (
             <button

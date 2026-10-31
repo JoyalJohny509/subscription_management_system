@@ -18,7 +18,8 @@ export default function ProtectedRoute({ children, roles }) {
   }
 
   if (roles && !roles.includes(user.role)) {
-    return <Navigate to="/subscriptions" replace />
+    const redirectPath = user.role === 'customer' ? '/portal' : '/dashboard'
+    return <Navigate to={redirectPath} replace />
   }
 
   return children

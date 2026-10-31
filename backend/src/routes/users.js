@@ -56,10 +56,13 @@ router.get('/', authorize('admin', 'staff'), (req, res) => {
 
 // ── POST /api/users ────────────────────────────────────────────────────────────
 router.post('/', authorize('admin'), (req, res) => {
-  const { name, email, password, department } = req.body;
+  const { name, email, password, role, department, company_name, phone, address } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'name, email, and password are required' });
   }
+
+  const VALID_ROLES = ['admin', 'staff', 'customer'];
+  const assignedRole = VALID_ROLES.includes(role) ? role : 'staff';
 
   const pwError = validatePassword(password);
   if (pwError) return res.status(400).json({ error: pwError });
@@ -69,14 +72,22 @@ router.post('/', authorize('admin'), (req, res) => {
 
   const password_hash = bcrypt.hashSync(password, 10);
   const result = db.prepare(
-    `INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, 'staff')`
-  ).run(name, email, password_hash);
+    `INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)`
+  ).run(name, email, password_hash, assignedRole);
 
   const userId = result.lastInsertRowid;
-  db.prepare(`INSERT INTO staff (user_id, department) VALUES (?, ?)`).run(userId, department || null);
+
+  if (assignedRole === 'customer') {
+    db.prepare(
+      `INSERT INTO customers (user_id, company_name, phone, address) VALUES (?, ?, ?, ?)`
+    ).run(userId, company_name || name, phone || null, address || null);
+  } else {
+    db.prepare(`INSERT INTO staff (user_id, department) VALUES (?, ?)`).run(userId, department || null);
+  }
 
   const user = db.prepare('SELECT id, name, email, role, is_active, created_at FROM users WHERE id = ?').get(userId);
-  return res.status(201).json({ data: user, message: 'Staff account created' });
+  const label = assignedRole.charAt(0).toUpperCase() + assignedRole.slice(1);
+  return res.status(201).json({ data: user, message: label + ' account created' });
 });
 
 // ── GET /api/users/:id ────────────────────────────────────────────────────────

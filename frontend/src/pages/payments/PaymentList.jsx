@@ -68,7 +68,7 @@ export default function PaymentList() {
     {
       key: 'invoice_number',
       label: 'Invoice #',
-      render: (row) => (
+      render: (_, row) => (
         <a
           href={`/invoices/${row.invoice_id}`}
           onClick={(e) => { e.preventDefault(); navigate(`/invoices/${row.invoice_id}`) }}
@@ -81,7 +81,7 @@ export default function PaymentList() {
     {
       key: 'customer',
       label: 'Customer',
-      render: (row) => (
+      render: (_, row) => (
         <div>
           <div>{row.customer_name || 'N/A'}</div>
           {row.company_name && (
@@ -90,11 +90,11 @@ export default function PaymentList() {
         </div>
       ),
     },
-    { key: 'amount', label: 'Amount Paid', render: (row) => <strong>{fmt(row.amount)}</strong> },
+    { key: 'amount', label: 'Amount Paid', render: (_, row) => <strong>{fmt(row.amount)}</strong> },
     {
       key: 'method',
       label: 'Method',
-      render: (row) => (
+      render: (_, row) => (
         <span className="badge badge-active" style={{ textTransform: 'uppercase', fontSize: '0.75rem' }}>
           {row.method}
         </span>
@@ -103,13 +103,13 @@ export default function PaymentList() {
     {
       key: 'payment_date',
       label: 'Date',
-      render: (row) => (row.payment_date ? new Date(row.payment_date).toLocaleDateString('en-IN') : '-'),
+      render: (_, row) => (row.payment_date ? new Date(row.payment_date).toLocaleDateString('en-IN') : '-'),
     },
-    { key: 'notes', label: 'Reference / Notes', render: (row) => row.notes || '-' },
+    { key: 'notes', label: 'Reference / Notes', render: (_, row) => row.notes || '-' },
     {
       key: 'status',
       label: 'Status',
-      render: (row) => <Badge status={row.status} />,
+      render: (_, row) => <Badge status={row.status} />,
     },
   ]
 
