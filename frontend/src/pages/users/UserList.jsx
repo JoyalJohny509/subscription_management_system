@@ -31,7 +31,7 @@ export default function UserList() {
       setUsers(data.users || data.data || data)
       if (data.totalPages) setTotalPages(data.totalPages)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load users.')
+      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to load users.')
     } finally {
       setLoading(false)
     }
