@@ -11,3 +11,7 @@ export const generateInvoiceFromSub = (subId, data = {}) => api.post(`/invoices/
 export const confirmInvoice = (id) => api.post(`/invoices/${id}/confirm`)
 export const cancelInvoice = (id) => api.post(`/invoices/${id}/cancel`)
 export const applyDiscount = (id, data) => api.post(`/invoices/${id}/apply-discount`, data)
+
+// PDF & Email (Member 3 – Integrations)
+export const downloadInvoicePdf = (id) => api.get(`/invoices/${id}/pdf`, { responseType: 'blob' })
+export const sendInvoiceEmail = (id) => api.post(`/invoices/${id}/send-email`)

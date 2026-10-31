@@ -14,6 +14,7 @@ const invoicesRoutes     = require('./routes/invoices');
 const discountsRoutes    = require('./routes/discounts');
 const paymentsRoutes     = require('./routes/payments');
 const dashboardRoutes    = require('./routes/dashboard');
+const notificationsRoutes = require('./routes/notifications');
 
 // ── Initialize DB ──────────────────────────────────────────────────────────────
 initializeDB();
@@ -41,6 +42,7 @@ app.use('/api/invoices',      invoicesRoutes);
 app.use('/api/discounts',     discountsRoutes);
 app.use('/api/payments',      paymentsRoutes);
 app.use('/api/dashboard',     dashboardRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // ── Health check ───────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
