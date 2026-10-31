@@ -17,7 +17,7 @@ router.get('/', (req, res) => {
   `;
   const params = [];
   if (billing_cycle) { sql += ` AND pl.billing_cycle = ?`; params.push(billing_cycle); }
-  if (product_id)    { sql += ` AND pl.product_id = ?`;   params.push(product_id); }
+  if (product_id) { sql += ` AND pl.product_id = ?`; params.push(product_id); }
   sql += ` ORDER BY pl.id`;
 
   const plans = db.prepare(sql).all(...params);
@@ -27,7 +27,7 @@ router.get('/', (req, res) => {
 // ── POST /api/plans ────────────────────────────────────────────────────────────
 router.post('/', authorize('admin'), (req, res) => {
   const { name, product_id, billing_cycle, price, min_qty, start_date, end_date,
-          auto_close, allow_pause, allow_early_close, allow_renewal } = req.body;
+    auto_close, allow_pause, allow_early_close, allow_renewal } = req.body;
 
   if (!name || !product_id || !billing_cycle || price === undefined) {
     return res.status(400).json({ error: 'name, product_id, billing_cycle, and price are required' });
@@ -41,7 +41,7 @@ router.post('/', authorize('admin'), (req, res) => {
                        auto_close, allow_pause, allow_early_close, allow_renewal)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(name, product_id, billing_cycle, price, min_qty || 1, start_date || null, end_date || null,
-         auto_close || 0, allow_pause ?? 1, allow_early_close ?? 1, allow_renewal ?? 1);
+    auto_close || 0, allow_pause ?? 1, allow_early_close ?? 1, allow_renewal ?? 1);
 
   const plan = db.prepare('SELECT pl.*, p.name AS product_name FROM plans pl JOIN products p ON p.id = pl.product_id WHERE pl.id = ?').get(result.lastInsertRowid);
   return res.status(201).json({ data: plan, message: 'Plan created' });
@@ -66,7 +66,7 @@ router.put('/:id', authorize('admin'), (req, res) => {
   if (!plan) return res.status(404).json({ error: 'Plan not found' });
 
   const { name, billing_cycle, price, min_qty, start_date, end_date,
-          auto_close, allow_pause, allow_early_close, allow_renewal, is_active } = req.body;
+    auto_close, allow_pause, allow_early_close, allow_renewal, is_active } = req.body;
 
   db.prepare(`
     UPDATE plans SET
@@ -83,9 +83,9 @@ router.put('/:id', authorize('admin'), (req, res) => {
       is_active         = COALESCE(?, is_active)
     WHERE id = ?
   `).run(name ?? null, billing_cycle ?? null, price ?? null, min_qty ?? null,
-         start_date ?? null, end_date ?? null, auto_close ?? null,
-         allow_pause ?? null, allow_early_close ?? null, allow_renewal ?? null,
-         is_active ?? null, req.params.id);
+    start_date ?? null, end_date ?? null, auto_close ?? null,
+    allow_pause ?? null, allow_early_close ?? null, allow_renewal ?? null,
+    is_active ?? null, req.params.id);
 
   const updated = db.prepare('SELECT pl.*, p.name AS product_name FROM plans pl JOIN products p ON p.id = pl.product_id WHERE pl.id = ?').get(req.params.id);
   return res.json({ data: updated, message: 'Plan updated' });
