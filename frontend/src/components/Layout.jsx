@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const navItems = [
   { icon: '📊', label: 'Dashboard', path: '/dashboard', roles: ['admin', 'staff'] },
+  { icon: '🏠', label: 'Client Portal', path: '/portal', roles: ['customer'] },
   { icon: '👥', label: 'Users', path: '/users', roles: ['admin'] },
   { icon: '📦', label: 'Products', path: '/products', roles: ['admin', 'staff'] },
   { icon: '📋', label: 'Plans', path: '/plans', roles: ['admin', 'staff'] },
@@ -13,7 +15,7 @@ const navItems = [
   { icon: '💳', label: 'Payments', path: '/payments', roles: ['admin', 'staff', 'customer'] },
 ]
 
-function Sidebar() {
+function Sidebar({ isOpen, onClose }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -31,13 +33,22 @@ function Sidebar() {
     : '?'
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
-        <div className="logo-title">
-          <div className="logo-icon">⚡</div>
-          <span>Brightloop</span>
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div className="logo-title">
+            <div className="logo-icon">⚡</div>
+            <span>Brightloop</span>
+          </div>
+          <div className="logo-subtitle">Subscription Management</div>
         </div>
-        <div className="logo-subtitle">Subscription Management</div>
+        <button
+          className="mobile-menu-btn"
+          onClick={onClose}
+          style={{ fontSize: '1.2rem', padding: '4px' }}
+        >
+          ✕
+        </button>
       </div>
 
       <nav className="sidebar-nav">
@@ -46,6 +57,7 @@ function Sidebar() {
           <NavLink
             key={item.path}
             to={item.path}
+            onClick={onClose}
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >
             <span className="nav-icon">{item.icon}</span>
@@ -59,7 +71,9 @@ function Sidebar() {
           <div className="user-avatar">{initials}</div>
           <div className="user-info">
             <div className="user-name">{user?.name || 'User'}</div>
-            <div className="user-role">{user?.role || 'guest'}</div>
+            <div className="user-role" style={{ textTransform: 'uppercase', fontSize: '0.7rem' }}>
+              {user?.role || 'guest'}
+            </div>
           </div>
         </div>
         <button className="btn btn-secondary w-full btn-sm" onClick={handleLogout}>
@@ -70,16 +84,24 @@ function Sidebar() {
   )
 }
 
-function Topbar({ title }) {
+function Topbar({ title, onToggleMobile }) {
   const { user } = useAuth()
   return (
     <header className="topbar">
-      <div className="topbar-left">
+      <div className="topbar-left" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button className="mobile-menu-btn" onClick={onToggleMobile} title="Toggle Navigation">
+          ☰
+        </button>
         <span className="topbar-title">{title || 'Brightloop SMS'}</span>
       </div>
       <div className="topbar-right">
-        <div className="topbar-user">
-          <span className="topbar-user-name">{user?.email}</span>
+        <div className="topbar-user" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="badge badge-active" style={{ fontSize: '0.7rem', textTransform: 'uppercase' }}>
+            {user?.role}
+          </span>
+          <span className="topbar-user-name" style={{ color: 'var(--text-secondary)' }}>
+            {user?.email}
+          </span>
         </div>
       </div>
     </header>
@@ -87,11 +109,17 @@ function Topbar({ title }) {
 }
 
 export default function Layout({ children, title }) {
+  const [mobileOpen, setMobileOpen] = useState(false)
+
   return (
     <div className="layout">
-      <Sidebar />
+      <div
+        className={`sidebar-backdrop ${mobileOpen ? 'active' : ''}`}
+        onClick={() => setMobileOpen(false)}
+      />
+      <Sidebar isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
       <div className="main-content">
-        <Topbar title={title} />
+        <Topbar title={title} onToggleMobile={() => setMobileOpen((prev) => !prev)} />
         <main className="page-content">{children}</main>
       </div>
     </div>
