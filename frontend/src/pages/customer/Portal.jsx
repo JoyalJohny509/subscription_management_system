@@ -8,7 +8,7 @@ import { useToast } from '../../context/ToastContext'
 import Badge from '../../components/Badge'
 import Modal from '../../components/Modal'
 import UpiPaymentModal from '../../components/UpiPaymentModal'
-import { ArrowUpCircle, Repeat, Receipt, CreditCard, FileDown, QrCode, Info, ExternalLink } from 'lucide-react'
+import { ArrowUpCircle, Clock, Repeat, Receipt, CreditCard, FileDown, QrCode, Info, ExternalLink } from 'lucide-react'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -120,7 +120,7 @@ export default function CustomerPortal() {
           <div className="portal-hero-text">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
               <span className="portal-plan-tag">Customer Portal</span>
-              <span className="kpi-chip">Sprint 2 Active</span>
+              <span className="status-pill"><span className="status-dot-pulse" /> Live Portal</span>
             </div>
             <h1 style={{ fontSize: '1.8rem', fontWeight: 700, margin: '4px 0' }}>
               Welcome back, {user?.name || 'Customer'}!
@@ -162,7 +162,7 @@ export default function CustomerPortal() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: '1.8rem' }}>⏳</span>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--warning)', flexShrink: 0 }}><Clock size={20} /></div>
             <div>
               <strong style={{ color: 'var(--warning)', fontSize: '1rem' }}>
                 Pending Balance: {fmt(totalOutstanding)}

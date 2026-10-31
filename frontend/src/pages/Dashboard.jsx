@@ -16,7 +16,7 @@ const fmtDate = (date) =>
 function RevenueChart({ data }) {
   if (!data || data.length === 0) {
     return (
-      <div style={{ padding: '30px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+      <div style={{ padding: '36px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
         No revenue data recorded yet for this period.
       </div>
     )
@@ -25,10 +25,23 @@ function RevenueChart({ data }) {
   const max = Math.max(...data.map((d) => d.amount || 0), 1)
 
   return (
-    <div style={{ marginTop: '16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '8px' }}>
-      <div className="bar-chart" style={{ height: '180px', display: 'flex', alignItems: 'flex-end', gap: '16px', padding: '0 10px', minWidth: '280px' }}>
+    <div style={{ marginTop: '20px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '8px' }}>
+      <div
+        className="bar-chart"
+        style={{
+          height: '190px',
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: '16px',
+          padding: '0 10px',
+          minWidth: '280px',
+          position: 'relative',
+          backgroundImage: 'linear-gradient(to top, rgba(255, 255, 255, 0.04) 1px, transparent 1px)',
+          backgroundSize: '100% 45px',
+        }}
+      >
         {data.map((item, i) => {
-          const pct = Math.max(8, ((item.amount || 0) / max) * 100)
+          const pct = Math.max(12, ((item.amount || 0) / max) * 100)
           return (
             <div key={i} className="bar-chart-item" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
               <div
@@ -36,27 +49,30 @@ function RevenueChart({ data }) {
                   width: '100%',
                   maxWidth: '44px',
                   height: `${pct}%`,
-                  background: 'linear-gradient(180deg, var(--accent-primary) 0%, rgba(99, 102, 241, 0.4) 100%)',
+                  background: 'linear-gradient(180deg, #6366F1 0%, rgba(99, 102, 241, 0.3) 100%)',
                   borderRadius: '6px 6px 0 0',
+                  borderTop: '2px solid #818CF8',
+                  boxShadow: '0 0 16px -4px rgba(99, 102, 241, 0.45)',
                   display: 'flex',
                   alignItems: 'flex-start',
                   justifyContent: 'center',
                   paddingTop: '6px',
                   position: 'relative',
-                  transition: 'height 0.4s ease',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  cursor: 'pointer',
                 }}
                 title={`${item.month}: ${fmt(item.amount)}`}
               >
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#FFFFFF', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
                   ₹{Math.round((item.amount || 0) / 1000)}k
                 </span>
               </div>
-              <div style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              <div style={{ marginTop: '10px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 {item.month}
               </div>
             </div>
           )
-        })}
+      })}
       </div>
     </div>
   )
@@ -136,7 +152,7 @@ export default function Dashboard() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <h1 className="page-title" style={{ margin: 0 }}>Executive Finance Dashboard</h1>
-            <span className="kpi-chip">Sprint 2 Live</span>
+            <span className="status-pill"><span className="status-dot-pulse" /> Live Telemetry</span>
           </div>
           <p className="page-subtitle" style={{ margin: '4px 0 0 0' }}>
             Real-time analytics across subscriptions, cash collection, and billing health
