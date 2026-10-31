@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getSubscriptions } from '../../api/subscriptions'
-import { getInvoices } from '../../api/invoices'
+import { getSubscriptions, upgradeSeats } from '../../api/subscriptions'
+import { getInvoices, downloadInvoicePdf } from '../../api/invoices'
 import { getPayments } from '../../api/payments'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import Badge from '../../components/Badge'
 import Modal from '../../components/Modal'
+import UpiPaymentModal from '../../components/UpiPaymentModal'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -21,42 +22,84 @@ export default function CustomerPortal() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('subscriptions')
 
+  // UPI QR Payment Modal
+  const [upiInvoice, setUpiInvoice] = useState(null)
+  const [showUpiModal, setShowUpiModal] = useState(false)
+
   // Seat upgrade modal
   const [showSeatModal, setShowSeatModal] = useState(false)
-  const [selectedSub, setSelectedSub] = useState(null)
-  const [requestedSeats, setRequestedSeats] = useState(1)
-  const [seatNotes, setSeatNotes] = useState('')
+  const [requestedSeats, setRequestedSeats] = useState(5)
+  const [upgradingSeat, setUpgradingSeat] = useState(false)
+
+  const loadPortalData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [subRes, invRes, payRes] = await Promise.all([
+        getSubscriptions(),
+        getInvoices(),
+        getPayments(),
+      ])
+      setSubscriptions(subRes.data.data || subRes.data || [])
+      setInvoices(invRes.data.data || invRes.data || [])
+      setPayments(payRes.data.data || payRes.data || [])
+    } catch (err) {
+      toast.error('Failed to load portal data.')
+    } finally {
+      setLoading(false)
+    }
+  }, [toast])
 
   useEffect(() => {
-    async function loadPortalData() {
-      setLoading(true)
-      try {
-        const [subRes, invRes, payRes] = await Promise.all([
-          getSubscriptions(),
-          getInvoices(),
-          getPayments(),
-        ])
-        setSubscriptions(subRes.data.data || subRes.data || [])
-        setInvoices(invRes.data.data || invRes.data || [])
-        setPayments(payRes.data.data || payRes.data || [])
-      } catch (err) {
-        toast.error('Failed to load portal data.')
-      } finally {
-        setLoading(false)
-      }
-    }
     loadPortalData()
-  }, [])
+  }, [loadPortalData])
 
   const activeSub = subscriptions.find((s) => s.status === 'active') || subscriptions[0]
   const unpaidInvoices = invoices.filter((i) => i.status === 'confirmed')
   const totalOutstanding = unpaidInvoices.reduce((sum, i) => sum + (i.grand_total || 0), 0)
 
-  const handleSeatRequest = (e) => {
+  // One-click PDF download using Member 3's backend pdfGenerator
+  const handleDownloadPdf = async (inv) => {
+    try {
+      toast.info('Generating official PDF invoice...')
+      const res = await downloadInvoicePdf(inv.id)
+      const blob = new Blob([res.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `${inv.invoice_number || `INV-${inv.id}`}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+      link.parentNode.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      toast.success('Official PDF downloaded!')
+    } catch (err) {
+      toast.error('Failed to download invoice PDF.')
+    }
+  }
+
+  // Real prorated seat upgrade using Member 1's backend proration engine
+  const handleSeatUpgradeSubmit = async (e) => {
     e.preventDefault()
-    toast.success(`Seat adjustment request submitted for ${requestedSeats} seats! Our account manager will contact you.`)
-    setShowSeatModal(false)
-    setSeatNotes('')
+    if (!activeSub) return
+    setUpgradingSeat(true)
+    try {
+      const res = await upgradeSeats(activeSub.id, {
+        new_qty: parseInt(requestedSeats),
+        effective_date: new Date().toISOString().slice(0, 10),
+      })
+      toast.success(res.data.message || 'Seats upgraded with pro-rated billing calculation!')
+      setShowSeatModal(false)
+      loadPortalData()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to adjust seats.')
+    } finally {
+      setUpgradingSeat(false)
+    }
+  }
+
+  const openUpiPayment = (inv) => {
+    setUpiInvoice(inv)
+    setShowUpiModal(true)
   }
 
   if (loading) {
@@ -70,19 +113,19 @@ export default function CustomerPortal() {
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-      {/* Welcome Banner */}
+      {/* Welcome Hero Banner */}
       <div className="portal-hero">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
               <span className="portal-plan-tag">Customer Portal</span>
-              <span className="kpi-chip">Client Account</span>
+              <span className="kpi-chip">Sprint 2 Active</span>
             </div>
             <h1 style={{ fontSize: '1.8rem', fontWeight: 700, margin: '4px 0' }}>
               Welcome back, {user?.name || 'Customer'}!
             </h1>
             <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.95rem' }}>
-              Manage your business subscription licenses, billing statements, and payment receipts.
+              Manage your business subscription licenses, download official invoices, and settle payments with instant UPI.
             </p>
           </div>
 
@@ -90,16 +133,19 @@ export default function CustomerPortal() {
             {activeSub && (
               <button
                 className="btn btn-primary"
-                onClick={() => { setSelectedSub(activeSub); setShowSeatModal(true); }}
+                onClick={() => {
+                  setRequestedSeats(8)
+                  setShowSeatModal(true)
+                }}
               >
-                ⚡ Request Seat Upgrade
+                ⚡ Live Seat Upgrade
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Outstanding Due Alert if present */}
+      {/* Outstanding Due Alert */}
       {totalOutstanding > 0 && (
         <div
           className="card"
@@ -127,9 +173,9 @@ export default function CustomerPortal() {
           </div>
           <button
             className="btn btn-success btn-sm"
-            onClick={() => navigate(`/invoices/${unpaidInvoices[0]?.id}`)}
+            onClick={() => openUpiPayment(unpaidInvoices[0])}
           >
-            Pay Latest Invoice →
+            Pay with UPI QR →
           </button>
         </div>
       )}
@@ -156,7 +202,7 @@ export default function CustomerPortal() {
             {fmt(activeSub?.grand_total || 0)}
           </div>
           <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 4 }}>
-            Next billing: {activeSub?.expiry_date || 'Ongoing'}
+            Cycle: {activeSub?.expiry_date ? `Ends ${activeSub.expiry_date}` : 'Ongoing'}
           </div>
         </div>
 
@@ -185,7 +231,7 @@ export default function CustomerPortal() {
           className={`tab-btn ${activeTab === 'invoices' ? 'active' : ''}`}
           onClick={() => setActiveTab('invoices')}
         >
-          🧾 Invoices & Statements ({invoices.length})
+          🧾 Invoices & PDF Downloads ({invoices.length})
         </button>
         <button
           className={`tab-btn ${activeTab === 'payments' ? 'active' : ''}`}
@@ -198,7 +244,15 @@ export default function CustomerPortal() {
       {/* Subscriptions Tab */}
       {activeTab === 'subscriptions' && (
         <div className="card">
-          <h3 style={{ marginTop: 0, marginBottom: 16 }}>Your Subscriptions</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ margin: 0 }}>Your Subscriptions</h3>
+            {activeSub && (
+              <button className="btn btn-secondary btn-sm" onClick={() => setShowSeatModal(true)}>
+                + Change Seats
+              </button>
+            )}
+          </div>
+
           {subscriptions.length === 0 ? (
             <p style={{ color: 'var(--text-secondary)' }}>No active subscriptions found.</p>
           ) : (
@@ -244,7 +298,7 @@ export default function CustomerPortal() {
       {/* Invoices Tab */}
       {activeTab === 'invoices' && (
         <div className="card">
-          <h3 style={{ marginTop: 0, marginBottom: 16 }}>Billing Invoices</h3>
+          <h3 style={{ marginTop: 0, marginBottom: 16 }}>Billing Invoices & PDF Statements</h3>
           {invoices.length === 0 ? (
             <p style={{ color: 'var(--text-secondary)' }}>No invoices issued yet.</p>
           ) : (
@@ -269,7 +323,14 @@ export default function CustomerPortal() {
                       <td style={{ fontWeight: 600 }}>{fmt(inv.grand_total)}</td>
                       <td><Badge status={inv.status} /></td>
                       <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handleDownloadPdf(inv)}
+                            title="Download official branded PDF invoice"
+                          >
+                            📄 PDF
+                          </button>
                           <button
                             className="btn btn-secondary btn-sm"
                             onClick={() => navigate(`/invoices/${inv.id}`)}
@@ -279,9 +340,9 @@ export default function CustomerPortal() {
                           {inv.status === 'confirmed' && (
                             <button
                               className="btn btn-success btn-sm"
-                              onClick={() => navigate(`/invoices/${inv.id}`)}
+                              onClick={() => openUpiPayment(inv)}
                             >
-                              Pay Now
+                              Pay UPI
                             </button>
                           )}
                         </div>
@@ -332,20 +393,20 @@ export default function CustomerPortal() {
         </div>
       )}
 
-      {/* Seat Adjustment Modal */}
+      {/* Live Prorated Seat Adjustment Modal */}
       {showSeatModal && (
         <Modal
           isOpen={showSeatModal}
           onClose={() => setShowSeatModal(false)}
-          title="Request License Seat Adjustment"
+          title="Live License Seat Adjustment (Prorated)"
         >
-          <form onSubmit={handleSeatRequest}>
+          <form onSubmit={handleSeatUpgradeSubmit}>
             <p style={{ color: 'var(--text-secondary)', marginTop: 0, marginBottom: 16 }}>
-              Add more user seats to your active subscription. Your dedicated Brightloop representative will immediately review and provision the additional seats.
+              Instantly adjust active license seats. The system automatically computes pro-rated charges for the remaining days in your billing cycle.
             </p>
 
             <div className="form-group">
-              <label>Target Number of Seats</label>
+              <label>New Target Seat Count *</label>
               <input
                 type="number"
                 min="1"
@@ -356,14 +417,20 @@ export default function CustomerPortal() {
               />
             </div>
 
-            <div className="form-group">
-              <label>Notes / Requirements</label>
-              <textarea
-                rows="3"
-                placeholder="E.g. Adding 5 new team members for Q4 expansion..."
-                value={seatNotes}
-                onChange={(e) => setSeatNotes(e.target.value)}
-              />
+            <div
+              style={{
+                background: 'var(--bg-secondary)',
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid var(--border)',
+                marginBottom: 16,
+                fontSize: '0.85rem',
+              }}
+            >
+              <div>✨ <strong>Automated Proration:</strong></div>
+              <div style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
+                If you increase seats mid-cycle, an invoice will be automatically generated with prorated amounts for only the remaining days in the active month.
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20 }}>
@@ -374,12 +441,27 @@ export default function CustomerPortal() {
               >
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary">
-                Submit Request
+              <button type="submit" className="btn btn-primary" disabled={upgradingSeat}>
+                {upgradingSeat ? 'Calculating & Updating...' : 'Confirm Seat Change'}
               </button>
             </div>
           </form>
         </Modal>
+      )}
+
+      {/* UPI QR Payment Modal */}
+      {showUpiModal && upiInvoice && (
+        <UpiPaymentModal
+          isOpen={showUpiModal}
+          onClose={() => {
+            setShowUpiModal(false)
+            setUpiInvoice(null)
+          }}
+          invoice={upiInvoice}
+          onPaymentSuccess={() => {
+            loadPortalData()
+          }}
+        />
       )}
     </div>
   )

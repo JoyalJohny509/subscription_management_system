@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getSummary } from '../api/dashboard'
+import { triggerBillingCron } from '../api/subscriptions'
+import { sendRenewalReminders } from '../api/notifications'
 import { useToast } from '../context/ToastContext'
 import StatCard from '../components/StatCard'
 import Badge from '../components/Badge'
@@ -64,6 +66,7 @@ export default function Dashboard() {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [runningJob, setRunningJob] = useState(false)
 
   const fetchData = useCallback(async (isManual = false) => {
     setLoading(true)
@@ -85,18 +88,43 @@ export default function Dashboard() {
     fetchData()
   }, [fetchData])
 
+  const handleRunBillingCron = async () => {
+    setRunningJob(true)
+    try {
+      const res = await triggerBillingCron()
+      const genCount = res.data.data?.invoices_generated || 0
+      const closedCount = res.data.data?.auto_closed || 0
+      toast.success(`Billing cron completed! ${genCount} invoices generated, ${closedCount} subscriptions auto-closed.`)
+      fetchData()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to trigger billing cron.')
+    } finally {
+      setRunningJob(false)
+    }
+  }
+
+  const handleSendRenewalAlerts = async () => {
+    try {
+      const res = await sendRenewalReminders(14)
+      toast.success(res.data.message || 'Renewal reminder emails dispatched!')
+    } catch (err) {
+      toast.error('Failed to send renewal alerts.')
+    }
+  }
+
   // Advanced SaaS Financial Metrics calculation
   const totalRevenue = Number(summary?.total_revenue || 0)
   const outstanding = Number(summary?.outstanding || 0)
   const activeSubs = Number(summary?.active_subscriptions || 0)
 
-  // Estimated Monthly Recurring Revenue (MRR) based on active accounts
+  // Estimated Monthly Recurring Revenue (MRR)
   const estimatedMRR = activeSubs > 0
     ? (totalRevenue > 0 ? Math.round(totalRevenue / Math.max(1, (summary?.monthly_revenue?.length || 1))) : activeSubs * 2500)
     : 0
   const estimatedARR = estimatedMRR * 12
+  const arpu = activeSubs > 0 ? Math.round(estimatedMRR / activeSubs) : 0
 
-  // Collection efficiency (% of billed receivables collected)
+  // Collection efficiency
   const collectionEfficiency = (totalRevenue + outstanding) > 0
     ? Math.round((totalRevenue / (totalRevenue + outstanding)) * 100)
     : 100
@@ -107,15 +135,32 @@ export default function Dashboard() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <h1 className="page-title" style={{ margin: 0 }}>Executive Finance Dashboard</h1>
-            <span className="kpi-chip">Live Metrics</span>
+            <span className="kpi-chip">Sprint 2 Live</span>
           </div>
           <p className="page-subtitle" style={{ margin: '4px 0 0 0' }}>
             Real-time analytics across subscriptions, cash collection, and billing health
           </p>
         </div>
-        <button className="btn btn-secondary" onClick={() => fetchData(true)} disabled={loading}>
-          {loading ? <span className="spinner spinner-sm" /> : '🔄'} Refresh Live Data
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={handleRunBillingCron}
+            disabled={runningJob}
+            title="Execute Member 1's automated billing cron immediately"
+          >
+            {runningJob ? 'Running Job...' : '⚡ Run Auto-Billing'}
+          </button>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={handleSendRenewalAlerts}
+            title="Dispatch Member 3's email renewal alerts"
+          >
+            🔔 Send Renewal Alerts
+          </button>
+          <button className="btn btn-primary btn-sm" onClick={() => fetchData(true)} disabled={loading}>
+            {loading ? <span className="spinner spinner-sm" /> : '🔄'} Refresh
+          </button>
+        </div>
       </div>
 
       {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
@@ -157,7 +202,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Est. Monthly Recurring (MRR)
+              Monthly Recurring (MRR)
             </div>
             <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-primary)', marginTop: 4 }}>
               {fmt(estimatedMRR)}
@@ -172,6 +217,17 @@ export default function Dashboard() {
             </div>
             <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#38BDF8', marginTop: 4 }}>
               {fmt(estimatedARR)}
+            </div>
+          </div>
+
+          <div style={{ width: '1px', height: '40px', background: 'var(--border)' }} />
+
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Avg. Revenue Per Account (ARPU)
+            </div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 4 }}>
+              {fmt(arpu)}
             </div>
           </div>
 
