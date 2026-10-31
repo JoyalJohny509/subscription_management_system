@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getSummary } from '../api/dashboard'
+import { useToast } from '../context/ToastContext'
 import StatCard from '../components/StatCard'
 import Badge from '../components/Badge'
 
@@ -9,188 +10,275 @@ const fmt = (amount) =>
 const fmtDate = (date) =>
   date ? new Date(date).toLocaleDateString('en-IN') : '—'
 
-function BarChart({ data }) {
-  if (!data || data.length === 0) return <div className="text-muted text-sm">No revenue data</div>
-  const max = Math.max(...data.map((d) => d.amount || 0)) || 1
+function RevenueChart({ data }) {
+  if (!data || data.length === 0) {
+    return (
+      <div style={{ padding: '30px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+        No revenue data recorded yet for this period.
+      </div>
+    )
+  }
+
+  const max = Math.max(...data.map((d) => d.amount || 0), 1)
+
   return (
-    <div className="bar-chart">
-      {data.map((item, i) => {
-        const pct = Math.max(4, ((item.amount || 0) / max) * 100)
-        return (
-          <div key={i} className="bar-chart-item">
-            <div className="bar-chart-bar-wrap">
+    <div style={{ marginTop: '16px' }}>
+      <div className="bar-chart" style={{ height: '180px', display: 'flex', alignItems: 'flex-end', gap: '16px', padding: '0 10px' }}>
+        {data.map((item, i) => {
+          const pct = Math.max(8, ((item.amount || 0) / max) * 100)
+          return (
+            <div key={i} className="bar-chart-item" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
               <div
-                className="bar-chart-bar"
-                style={{ height: `${pct}%` }}
+                style={{
+                  width: '100%',
+                  maxWidth: '44px',
+                  height: `${pct}%`,
+                  background: 'linear-gradient(180deg, var(--accent-primary) 0%, rgba(99, 102, 241, 0.4) 100%)',
+                  borderRadius: '6px 6px 0 0',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'center',
+                  paddingTop: '6px',
+                  position: 'relative',
+                  transition: 'height 0.4s ease',
+                }}
                 title={`${item.month}: ${fmt(item.amount)}`}
               >
-                <span className="bar-chart-value" style={{ fontSize: '0.65rem' }}>
-                  ₹{Math.round((item.amount || 0) / 1000)}K
+                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                  ₹{Math.round((item.amount || 0) / 1000)}k
                 </span>
               </div>
+              <div style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                {item.month}
+              </div>
             </div>
-            <div className="bar-chart-label">{item.month}</div>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }
 
 export default function Dashboard() {
+  const toast = useToast()
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (isManual = false) => {
     setLoading(true)
     setError('')
     try {
       const res = await getSummary()
-      setSummary(res.data)
+      const data = res.data.data || res.data
+      setSummary(data)
+      if (isManual) toast.success('Dashboard metrics updated!')
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load dashboard data.')
+      setError(err.response?.data?.error || 'Failed to load dashboard data.')
+      toast.error('Failed to refresh dashboard.')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [toast])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
+  // Advanced SaaS Financial Metrics calculation
+  const totalRevenue = Number(summary?.total_revenue || 0)
+  const outstanding = Number(summary?.outstanding || 0)
+  const activeSubs = Number(summary?.active_subscriptions || 0)
+
+  // Estimated Monthly Recurring Revenue (MRR) based on active accounts
+  const estimatedMRR = activeSubs > 0
+    ? (totalRevenue > 0 ? Math.round(totalRevenue / Math.max(1, (summary?.monthly_revenue?.length || 1))) : activeSubs * 2500)
+    : 0
+  const estimatedARR = estimatedMRR * 12
+
+  // Collection efficiency (% of billed receivables collected)
+  const collectionEfficiency = (totalRevenue + outstanding) > 0
+    ? Math.round((totalRevenue / (totalRevenue + outstanding)) * 100)
+    : 100
+
   return (
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Finance Dashboard</h1>
-          <p className="page-subtitle">Overview of subscriptions, revenue and billing</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 className="page-title" style={{ margin: 0 }}>Executive Finance Dashboard</h1>
+            <span className="kpi-chip">Live Metrics</span>
+          </div>
+          <p className="page-subtitle" style={{ margin: '4px 0 0 0' }}>
+            Real-time analytics across subscriptions, cash collection, and billing health
+          </p>
         </div>
-        <button className="btn btn-secondary" onClick={fetchData} disabled={loading}>
-          {loading ? <span className="spinner spinner-sm" /> : '🔄'} Refresh
+        <button className="btn btn-secondary" onClick={() => fetchData(true)} disabled={loading}>
+          {loading ? <span className="spinner spinner-sm" /> : '🔄'} Refresh Live Data
         </button>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
 
-      {loading && !summary ? (
-        <div className="loading-container">
-          <div className="spinner spinner-lg" />
-          <span>Loading dashboard...</span>
+      {/* Primary KPI Stat Cards */}
+      <div className="grid-4" style={{ marginBottom: '20px' }}>
+        <StatCard
+          icon="🔄"
+          label="Active Subscriptions"
+          value={activeSubs}
+          color="indigo"
+          subtitle="Contracted clients"
+        />
+        <StatCard
+          icon="💰"
+          label="Revenue Received"
+          value={fmt(totalRevenue)}
+          color="green"
+          subtitle="Settled payments"
+        />
+        <StatCard
+          icon="⏳"
+          label="Outstanding Dues"
+          value={fmt(outstanding)}
+          color="amber"
+          subtitle="Pending collections"
+        />
+        <StatCard
+          icon="⚠️"
+          label="Overdue Invoices"
+          value={summary?.overdue_invoices ?? 0}
+          color="red"
+          subtitle="Requires attention"
+        />
+      </div>
+
+      {/* Advanced Recurring Revenue KPI Strip (MRR & ARR) */}
+      <div className="card" style={{ marginBottom: '24px', background: 'linear-gradient(90deg, rgba(30, 41, 59, 0.9) 0%, rgba(99, 102, 241, 0.08) 100%)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Est. Monthly Recurring (MRR)
+            </div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-primary)', marginTop: 4 }}>
+              {fmt(estimatedMRR)}
+            </div>
+          </div>
+
+          <div style={{ width: '1px', height: '40px', background: 'var(--border)' }} />
+
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Annual Run Rate (ARR)
+            </div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#38BDF8', marginTop: 4 }}>
+              {fmt(estimatedARR)}
+            </div>
+          </div>
+
+          <div style={{ width: '1px', height: '40px', background: 'var(--border)' }} />
+
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Collection Efficiency
+            </div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: collectionEfficiency >= 80 ? 'var(--success)' : 'var(--warning)', marginTop: 4 }}>
+              {collectionEfficiency}%
+            </div>
+          </div>
         </div>
-      ) : (
-        <>
-          {/* Stat Cards */}
-          <div className="grid-4" style={{ marginBottom: '24px' }}>
-            <StatCard
-              icon="🔄"
-              label="Active Subscriptions"
-              value={summary?.active_subscriptions ?? 0}
-              color="indigo"
-              subtitle="Currently active"
-            />
-            <StatCard
-              icon="💰"
-              label="Revenue Received"
-              value={fmt(summary?.revenue_received)}
-              color="green"
-              subtitle="Total paid invoices"
-            />
-            <StatCard
-              icon="⏳"
-              label="Outstanding"
-              value={fmt(summary?.outstanding)}
-              color="amber"
-              subtitle="Pending payments"
-            />
-            <StatCard
-              icon="⚠️"
-              label="Overdue Invoices"
-              value={summary?.overdue_count ?? 0}
-              color="red"
-              subtitle={fmt(summary?.overdue_amount) + ' overdue'}
-            />
-          </div>
+      </div>
 
-          {/* Charts + breakdown */}
-          <div className="grid-2" style={{ marginBottom: '24px' }}>
-            {/* Revenue bar chart */}
-            <div className="card">
-              <div className="card-header">
-                <h3 className="card-title">Monthly Revenue</h3>
-                <span className="text-muted text-sm">Last 6 months</span>
-              </div>
-              <BarChart data={summary?.monthly_revenue || []} />
+      {/* Charts + Breakdown */}
+      <div className="grid-2" style={{ marginBottom: '24px' }}>
+        {/* Monthly Revenue Bar Chart */}
+        <div className="card">
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h3 className="card-title" style={{ margin: 0 }}>Monthly Cash Collections</h3>
+              <span className="text-muted text-sm">Settled payments by month</span>
             </div>
-
-            {/* Subscription status breakdown */}
-            <div className="card">
-              <div className="card-header">
-                <h3 className="card-title">Subscription Status</h3>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {(summary?.subscription_breakdown || []).map((item, i) => (
-                  <div
-                    key={i}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <Badge status={item.status} />
-                    </div>
-                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>
-                      {item.count}
-                    </span>
-                  </div>
-                ))}
-                {(!summary?.subscription_breakdown || summary.subscription_breakdown.length === 0) && (
-                  <div className="text-muted text-sm">No subscription data</div>
-                )}
-              </div>
-            </div>
+            <span className="badge badge-confirmed" style={{ fontSize: '0.75rem' }}>Trend</span>
           </div>
+          <RevenueChart data={summary?.monthly_revenue || []} />
+        </div>
 
-          {/* Recent Invoices */}
-          <div className="card">
-            <div className="card-header">
-              <h3 className="card-title">Recent Invoices</h3>
-            </div>
-            <div className="table-container" style={{ border: 'none', borderRadius: '0' }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Invoice#</th>
-                    <th>Customer</th>
-                    <th>Amount</th>
-                    <th>Due Date</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(summary?.recent_invoices || []).map((inv) => (
-                    <tr key={inv._id || inv.id}>
-                      <td style={{ fontWeight: '600' }}>{inv.invoice_number || inv.number || '—'}</td>
-                      <td>{inv.customer?.name || inv.customer_name || '—'}</td>
-                      <td style={{ fontWeight: '600' }}>{fmt(inv.grand_total)}</td>
-                      <td className="text-muted">{fmtDate(inv.due_date)}</td>
-                      <td><Badge status={inv.status} /></td>
-                    </tr>
-                  ))}
-                  {(!summary?.recent_invoices || summary.recent_invoices.length === 0) && (
-                    <tr>
-                      <td colSpan={5}>
-                        <div className="empty-state">
-                          <div className="empty-state-icon">🧾</div>
-                          <div className="empty-state-text">No recent invoices</div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+        {/* Subscription Status Distribution */}
+        <div className="card">
+          <div className="card-header">
+            <h3 className="card-title" style={{ margin: 0 }}>Subscription Lifecycle Breakdown</h3>
+            <span className="text-muted text-sm">Active vs draft vs closed</span>
           </div>
-        </>
-      )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '16px' }}>
+            {(summary?.subscription_status_breakdown || []).map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  background: 'var(--bg-secondary)',
+                  borderRadius: '8px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Badge status={item.status} />
+                </div>
+                <span style={{ fontWeight: '700', fontSize: '1.1rem', color: 'var(--text-primary)' }}>
+                  {item.count}
+                </span>
+              </div>
+            ))}
+            {(!summary?.subscription_status_breakdown || summary.subscription_status_breakdown.length === 0) && (
+              <div className="text-muted text-sm" style={{ padding: '20px 0', textAlign: 'center' }}>
+                No subscription status data available.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Invoices Table */}
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title" style={{ margin: 0 }}>Recent Invoices Issued</h3>
+        </div>
+        <div className="table-container" style={{ border: 'none', borderRadius: 0 }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Issue Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(summary?.recent_invoices || []).map((inv) => (
+                <tr key={inv.id}>
+                  <td style={{ fontWeight: '600' }}>
+                    <a href={`/invoices/${inv.id}`} style={{ color: 'var(--accent-primary)' }}>
+                      {inv.invoice_number || `INV-${inv.id}`}
+                    </a>
+                  </td>
+                  <td>{inv.customer_name || 'Customer'}</td>
+                  <td style={{ fontWeight: '600' }}>{fmt(inv.grand_total)}</td>
+                  <td className="text-muted">{fmtDate(inv.issue_date)}</td>
+                  <td><Badge status={inv.status} /></td>
+                </tr>
+              ))}
+              {(!summary?.recent_invoices || summary.recent_invoices.length === 0) && (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                    No recent invoices found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }

@@ -59,23 +59,23 @@ export default function PlanList() {
   }
 
   const columns = [
-    { key: 'name', label: 'Plan Name', render: (row) => <strong>{row.name}</strong> },
-    { key: 'product_name', label: 'Product', render: (row) => row.product_name || 'N/A' },
+    { key: 'name', label: 'Plan Name', render: (_, row) => <strong>{row.name}</strong> },
+    { key: 'product_name', label: 'Product', render: (_, row) => row.product_name || 'N/A' },
     {
       key: 'billing_cycle',
       label: 'Billing Cycle',
-      render: (row) => (
+      render: (_, row) => (
         <span className="badge badge-draft" style={{ textTransform: 'capitalize' }}>
           {row.billing_cycle}
         </span>
       ),
     },
-    { key: 'price', label: 'Price', render: (row) => fmt(row.price) },
-    { key: 'min_qty', label: 'Min Qty', render: (row) => row.min_qty || 1 },
+    { key: 'price', label: 'Price', render: (_, row) => fmt(row.price) },
+    { key: 'min_qty', label: 'Min Qty', render: (_, row) => row.min_qty || 1 },
     {
       key: 'features',
       label: 'Options',
-      render: (row) => (
+      render: (_, row) => (
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
           {row.allow_pause ? <span className="badge badge-active" style={{ fontSize: '0.7rem' }}>Pause</span> : null}
           {row.allow_renewal ? <span className="badge badge-confirmed" style={{ fontSize: '0.7rem' }}>Renew</span> : null}
@@ -86,14 +86,14 @@ export default function PlanList() {
     {
       key: 'status',
       label: 'Status',
-      render: (row) => <Badge status={row.is_active ? 'active' : 'closed'} />,
+      render: (_, row) => <Badge status={row.is_active ? 'active' : 'closed'} />,
     },
     ...(isAdmin()
       ? [
           {
             key: 'actions',
             label: 'Actions',
-            render: (row) => (
+            render: (_, row) => (
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   className="btn btn-secondary btn-sm"

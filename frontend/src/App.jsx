@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { ToastProvider } from './context/ToastContext'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -10,6 +11,7 @@ import ForgotPassword from './pages/auth/ForgotPassword'
 
 // App Pages
 import Dashboard from './pages/Dashboard'
+import CustomerPortal from './pages/customer/Portal'
 import UserList from './pages/users/UserList'
 import ProductList from './pages/products/ProductList'
 import ProductDetail from './pages/products/ProductDetail'
@@ -29,7 +31,7 @@ import PaymentDetail from './pages/payments/PaymentDetail'
 function AppRoutes() {
   const { user } = useAuth()
 
-  const defaultHome = user?.role === 'customer' ? '/subscriptions' : '/dashboard'
+  const defaultHome = user?.role === 'customer' ? '/portal' : '/dashboard'
 
   return (
     <Routes>
@@ -40,6 +42,18 @@ function AppRoutes() {
 
       {/* Root redirect */}
       <Route path="/" element={<Navigate to={defaultHome} replace />} />
+
+      {/* Customer Portal */}
+      <Route
+        path="/portal"
+        element={
+          <ProtectedRoute roles={['customer']}>
+            <Layout title="Client Portal">
+              <CustomerPortal />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* Dashboard */}
       <Route
@@ -228,7 +242,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <ToastProvider>
+        <AppRoutes />
+      </ToastProvider>
     </AuthProvider>
   )
 }

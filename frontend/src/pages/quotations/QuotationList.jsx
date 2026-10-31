@@ -90,7 +90,7 @@ export default function QuotationList() {
     {
       key: 'quotation_number',
       label: 'Quotation #',
-      render: (row) => (
+      render: (_, row) => (
         <a
           href={`/quotations/${row.id}`}
           onClick={(e) => { e.preventDefault(); navigate(`/quotations/${row.id}`) }}
@@ -103,7 +103,7 @@ export default function QuotationList() {
     {
       key: 'customer',
       label: 'Customer',
-      render: (row) => (
+      render: (_, row) => (
         <div>
           <div>{row.customer_name || 'N/A'}</div>
           {row.company_name && (
@@ -112,22 +112,22 @@ export default function QuotationList() {
         </div>
       ),
     },
-    { key: 'grand_total', label: 'Total Amount', render: (row) => fmt(row.grand_total) },
-    { key: 'validity_days', label: 'Validity', render: (row) => `${row.validity_days || 30} days` },
+    { key: 'grand_total', label: 'Total Amount', render: (_, row) => fmt(row.grand_total) },
+    { key: 'validity_days', label: 'Validity', render: (_, row) => `${row.validity_days || 30} days` },
     {
       key: 'status',
       label: 'Status',
-      render: (row) => <Badge status={row.status} />,
+      render: (_, row) => <Badge status={row.status} />,
     },
     {
       key: 'created_at',
       label: 'Date',
-      render: (row) => (row.created_at ? new Date(row.created_at).toLocaleDateString('en-IN') : '-'),
+      render: (_, row) => (row.created_at ? new Date(row.created_at).toLocaleDateString('en-IN') : '-'),
     },
     {
       key: 'actions',
       label: 'Actions',
-      render: (row) => (
+      render: (_, row) => (
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           <button
             className="btn btn-secondary btn-sm"
