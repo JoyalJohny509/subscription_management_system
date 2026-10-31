@@ -116,12 +116,15 @@ export default function UserList() {
       />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
-      <UserForm
-        isOpen={showForm}
-        onClose={() => setShowForm(false)}
-        onSave={editUser ? handleEdit : handleCreate}
-        initialData={editUser}
-      />
+      {showForm && (
+        <UserForm
+          key={editUser?._id || editUser?.id || 'new'}
+          isOpen={showForm}
+          onClose={() => { setShowForm(false); setEditUser(null) }}
+          onSave={editUser ? handleEdit : handleCreate}
+          initialData={editUser}
+        />
+      )}
     </div>
   )
 }

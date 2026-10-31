@@ -1,27 +1,56 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Modal from '../../components/Modal'
 
 export default function DiscountForm({ isOpen, onClose, onSave, initialData }) {
   const isEdit = !!initialData
-  const [form, setForm] = useState(
-    initialData
-      ? { ...initialData }
-      : {
-          code: '',
-          name: '',
-          type: 'percentage',
-          value: '',
-          min_amount: 0,
-          min_qty: 1,
-          start_date: '',
-          end_date: '',
-          max_uses: '',
-          applicable_to: 'all',
-          is_active: 1,
-        }
-  )
+  const [form, setForm] = useState({
+    code: '',
+    name: '',
+    type: 'percentage',
+    value: '',
+    min_amount: 0,
+    min_qty: 1,
+    start_date: '',
+    end_date: '',
+    max_uses: '',
+    applicable_to: 'all',
+    is_active: 1,
+  })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (initialData) {
+      setForm({
+        code: initialData.code || '',
+        name: initialData.name || '',
+        type: initialData.type || 'percentage',
+        value: initialData.value !== undefined && initialData.value !== null ? initialData.value : '',
+        min_amount: initialData.min_amount !== undefined && initialData.min_amount !== null ? initialData.min_amount : 0,
+        min_qty: initialData.min_qty || 1,
+        start_date: initialData.start_date || '',
+        end_date: initialData.end_date || '',
+        max_uses: initialData.max_uses !== undefined && initialData.max_uses !== null ? initialData.max_uses : '',
+        applicable_to: initialData.applicable_to || 'all',
+        is_active: initialData.is_active !== undefined ? (initialData.is_active ? 1 : 0) : 1,
+      })
+    } else {
+      setForm({
+        code: '',
+        name: '',
+        type: 'percentage',
+        value: '',
+        min_amount: 0,
+        min_qty: 1,
+        start_date: '',
+        end_date: '',
+        max_uses: '',
+        applicable_to: 'all',
+        is_active: 1,
+      })
+    }
+    setErrors({})
+  }, [initialData, isOpen])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -52,7 +81,7 @@ export default function DiscountForm({ isOpen, onClose, onSave, initialData }) {
       })
       onClose()
     } catch (err) {
-      setErrors({ form: err.response?.data?.error || 'Failed to save discount rule' })
+      setErrors({ form: err.response?.data?.error || err.response?.data?.message || 'Failed to save discount rule' })
     } finally {
       setLoading(false)
     }
@@ -77,6 +106,7 @@ export default function DiscountForm({ isOpen, onClose, onSave, initialData }) {
               value={form.code}
               onChange={handleChange}
               disabled={isEdit}
+              style={errors.code ? { borderColor: 'var(--danger)' } : {}}
               required
             />
             {errors.code && <span style={{ color: 'var(--danger)', fontSize: '0.75rem' }}>{errors.code}</span>}
@@ -90,6 +120,7 @@ export default function DiscountForm({ isOpen, onClose, onSave, initialData }) {
               placeholder="e.g. 10% Welcome Discount"
               value={form.name}
               onChange={handleChange}
+              style={errors.name ? { borderColor: 'var(--danger)' } : {}}
               required
             />
             {errors.name && <span style={{ color: 'var(--danger)', fontSize: '0.75rem' }}>{errors.name}</span>}
@@ -113,6 +144,7 @@ export default function DiscountForm({ isOpen, onClose, onSave, initialData }) {
               name="value"
               value={form.value}
               onChange={handleChange}
+              style={errors.value ? { borderColor: 'var(--danger)' } : {}}
               required
             />
             {errors.value && <span style={{ color: 'var(--danger)', fontSize: '0.75rem' }}>{errors.value}</span>}

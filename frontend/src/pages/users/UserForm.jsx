@@ -1,14 +1,31 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Modal from '../../components/Modal'
 
 export default function UserForm({ isOpen, onClose, onSave, initialData }) {
   const isEdit = !!initialData
 
-  const [form, setForm] = useState(
-    initialData || { name: '', email: '', role: 'staff', password: '' }
-  )
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    role: 'staff',
+    password: '',
+  })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (initialData) {
+      setForm({
+        name: initialData.name || '',
+        email: initialData.email || '',
+        role: initialData.role || 'staff',
+        password: '',
+      })
+    } else {
+      setForm({ name: '', email: '', role: 'staff', password: '' })
+    }
+    setErrors({})
+  }, [initialData, isOpen])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -100,6 +117,7 @@ export default function UserForm({ isOpen, onClose, onSave, initialData }) {
             value={form.email}
             onChange={handleChange}
             placeholder="john@example.com"
+            disabled={isEdit}
             style={errors.email ? { borderColor: 'var(--danger)' } : {}}
           />
           {errors.email && <span className="field-error">{errors.email}</span>}

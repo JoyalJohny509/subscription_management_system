@@ -161,6 +161,7 @@ export default function DiscountList() {
 
       {showForm && (
         <DiscountForm
+          key={editDiscount?.id || 'new'}
           isOpen={showForm}
           onClose={() => { setShowForm(false); setEditDiscount(null) }}
           onSave={editDiscount ? handleEdit : handleCreate}

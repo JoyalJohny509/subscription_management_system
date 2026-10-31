@@ -144,6 +144,16 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/quotations/:id/edit"
+        element={
+          <ProtectedRoute roles={['admin', 'staff']}>
+            <Layout title="Edit Quotation">
+              <QuotationForm />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* Subscriptions */}
       <Route

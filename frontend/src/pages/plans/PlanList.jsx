@@ -163,6 +163,7 @@ export default function PlanList() {
 
       {showForm && (
         <PlanForm
+          key={editPlan?.id || 'new'}
           isOpen={showForm}
           onClose={() => { setShowForm(false); setEditPlan(null) }}
           onSave={editPlan ? handleEdit : handleCreate}

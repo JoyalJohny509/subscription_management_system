@@ -4,27 +4,58 @@ import { getProducts } from '../../api/products'
 
 export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
   const isEdit = !!initialData
-  const [form, setForm] = useState(
-    initialData
-      ? { ...initialData }
-      : {
-          name: '',
-          product_id: '',
-          billing_cycle: 'monthly',
-          price: '',
-          min_qty: 1,
-          start_date: '',
-          end_date: '',
-          allow_pause: false,
-          allow_early_close: false,
-          allow_renewal: true,
-          auto_close: false,
-          is_active: true,
-        }
-  )
+  const [form, setForm] = useState({
+    name: '',
+    product_id: '',
+    billing_cycle: 'monthly',
+    price: '',
+    min_qty: 1,
+    start_date: '',
+    end_date: '',
+    allow_pause: false,
+    allow_early_close: false,
+    allow_renewal: true,
+    auto_close: false,
+    is_active: true,
+  })
   const [products, setProducts] = useState([])
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (initialData) {
+      setForm({
+        name: initialData.name || '',
+        product_id: initialData.product_id || '',
+        billing_cycle: initialData.billing_cycle || 'monthly',
+        price: initialData.price !== undefined && initialData.price !== null ? initialData.price : '',
+        min_qty: initialData.min_qty || 1,
+        start_date: initialData.start_date || '',
+        end_date: initialData.end_date || '',
+        allow_pause: Boolean(initialData.allow_pause),
+        allow_early_close: Boolean(initialData.allow_early_close),
+        allow_renewal: initialData.allow_renewal !== undefined ? Boolean(initialData.allow_renewal) : true,
+        auto_close: Boolean(initialData.auto_close),
+        is_active: initialData.is_active !== undefined ? Boolean(initialData.is_active) : true,
+      })
+    } else {
+      setForm({
+        name: '',
+        product_id: '',
+        billing_cycle: 'monthly',
+        price: '',
+        min_qty: 1,
+        start_date: '',
+        end_date: '',
+        allow_pause: false,
+        allow_early_close: false,
+        allow_renewal: true,
+        auto_close: false,
+        is_active: true,
+      })
+    }
+    setErrors({})
+  }, [initialData, isOpen])
 
   useEffect(() => {
     if (isOpen) {
@@ -82,17 +113,28 @@ export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Edit Plan' : 'Add Plan'} size="lg">
       <form onSubmit={handleSubmit}>
-        {errors.api && <div className="alert alert-error">{errors.api}</div>}
+        {errors.api && <div className="alert alert-error" style={{ marginBottom: 16 }}>{errors.api}</div>}
 
         <div className="form-row">
           <div className="form-group">
             <label>Plan Name *</label>
-            <input name="name" value={form.name} onChange={handleChange} placeholder="e.g. Monthly Basic" />
+            <input
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              placeholder="e.g. Monthly Basic"
+              style={errors.name ? { borderColor: 'var(--danger)' } : {}}
+            />
             {errors.name && <span className="field-error">{errors.name}</span>}
           </div>
           <div className="form-group">
             <label>Product *</label>
-            <select name="product_id" value={form.product_id} onChange={handleChange}>
+            <select
+              name="product_id"
+              value={form.product_id}
+              onChange={handleChange}
+              style={errors.product_id ? { borderColor: 'var(--danger)' } : {}}
+            >
               <option value="">Select product...</option>
               {products.map((p) => (
                 <option key={p._id || p.id} value={p._id || p.id}>{p.name}</option>
@@ -114,7 +156,15 @@ export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
           </div>
           <div className="form-group">
             <label>Price (₹) *</label>
-            <input name="price" type="number" step="0.01" value={form.price} onChange={handleChange} placeholder="0.00" />
+            <input
+              name="price"
+              type="number"
+              step="0.01"
+              value={form.price}
+              onChange={handleChange}
+              placeholder="0.00"
+              style={errors.price ? { borderColor: 'var(--danger)' } : {}}
+            />
             {errors.price && <span className="field-error">{errors.price}</span>}
           </div>
         </div>
