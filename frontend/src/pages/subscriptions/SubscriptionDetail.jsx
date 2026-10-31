@@ -13,7 +13,7 @@ import { useAuth } from '../../context/AuthContext'
 import Badge from '../../components/Badge'
 import Modal from '../../components/Modal'
 import UpiPaymentModal from '../../components/UpiPaymentModal'
-import { QrCode } from 'lucide-react'
+import { QrCode, Pencil } from 'lucide-react'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -184,7 +184,7 @@ export default function SubscriptionDetail() {
                 className="btn btn-secondary"
                 onClick={openEditModal}
               >
-                ✏️ Edit Dates & Terms
+                <><Pencil size={14} /> Edit Dates & Terms</>
               </button>
               <button
                 className="btn btn-primary"
