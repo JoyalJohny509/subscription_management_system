@@ -92,11 +92,10 @@ export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
           <div className="form-group">
             <label>Billing Cycle</label>
             <select name="billing_cycle" value={form.billing_cycle} onChange={handleChange}>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="half_yearly">Half Yearly</option>
-              <option value="annual">Annual</option>
-              <option value="one_time">One Time</option>
+              <option value="yearly">Yearly</option>
             </select>
           </div>
           <div className="form-group">

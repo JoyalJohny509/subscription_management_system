@@ -1,5 +1,3 @@
-import React from 'react'
-
 export default function DataTable({ columns, data, loading, emptyMessage }) {
   if (loading) {
     return (
@@ -10,36 +8,39 @@ export default function DataTable({ columns, data, loading, emptyMessage }) {
     )
   }
 
+  const safeData = Array.isArray(data) ? data : []
+
   const renderCell = (col, row) => {
     if (!col.render) {
-      const v = row[col.key]
-      if (v && typeof v === 'object') return <span className="text-muted">—</span>
-      return v ?? <span className="text-muted">—</span>
+      const directVal = row[col.key]
+      return directVal !== undefined && directVal !== null ? directVal : <span className="text-muted">—</span>
     }
 
     const val = row[col.key]
     let result
 
-    if (val === undefined) {
-      try {
-        result = col.render(row, row)
-      } catch (err) {
-        result = <span className="text-muted">—</span>
-      }
-    } else {
-      try {
+    try {
+      if (val !== undefined) {
         result = col.render(val, row)
-      } catch (err) {
+      } else {
+        // Try calling render(undefined, row) first
         try {
-          result = col.render(row, val)
-        } catch (err2) {
-          result = <span className="text-muted">—</span>
+          result = col.render(undefined, row)
+        } catch {
+          result = col.render(row, row)
         }
+      }
+    } catch (err) {
+      try {
+        result = col.render(row, val)
+      } catch (err2) {
+        console.error('DataTable render error:', err2)
+        return <span className="text-muted">—</span>
       }
     }
 
-    // Safety guard: prevent raw Objects from rendering as JSX children which causes React fatal crashes
-    if (result && typeof result === 'object' && !React.isValidElement(result)) {
+    // Safety guard: Never allow a plain non-element object to be rendered directly into JSX
+    if (result !== null && typeof result === 'object' && !result.$$typeof && !Array.isArray(result)) {
       return <span className="text-muted">—</span>
     }
 
@@ -57,7 +58,7 @@ export default function DataTable({ columns, data, loading, emptyMessage }) {
           </tr>
         </thead>
         <tbody>
-          {!data || data.length === 0 ? (
+          {safeData.length === 0 ? (
             <tr>
               <td colSpan={columns.length}>
                 <div className="empty-state">
@@ -69,7 +70,7 @@ export default function DataTable({ columns, data, loading, emptyMessage }) {
               </td>
             </tr>
           ) : (
-            data.map((row, rowIdx) => (
+            safeData.map((row, rowIdx) => (
               <tr key={row._id || row.id || rowIdx}>
                 {columns.map((col) => (
                   <td key={col.key}>
