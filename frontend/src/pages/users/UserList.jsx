@@ -91,7 +91,7 @@ export default function UserList() {
             className="btn btn-primary"
             onClick={() => { setEditUser(null); setShowForm(true) }}
           >
-            + Create Staff
+            + Create User
           </button>
         )}
       </div>

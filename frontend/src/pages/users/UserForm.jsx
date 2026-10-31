@@ -76,7 +76,7 @@ export default function UserForm({ isOpen, onClose, onSave, initialData }) {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Edit User' : 'Create Staff User'} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Edit User' : 'Create User'} size="md">
       <form onSubmit={handleSubmit}>
         {errors.api && <div className="alert alert-error" style={{ marginBottom: '16px' }}>{errors.api}</div>}
 
