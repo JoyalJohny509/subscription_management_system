@@ -1,6 +1,21 @@
 import { useState, useEffect } from 'react'
 import Modal from '../../components/Modal'
 
+function toInputDate(val) {
+  if (!val) return ''
+  if (typeof val === 'string') {
+    const match = val.match(/^(\d{4}-\d{2}-\d{2})/)
+    if (match) return match[1]
+  }
+  try {
+    const d = new Date(val)
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().slice(0, 10)
+    }
+  } catch (e) {}
+  return ''
+}
+
 export default function DiscountForm({ isOpen, onClose, onSave, initialData }) {
   const isEdit = !!initialData
   const [form, setForm] = useState({
@@ -28,8 +43,8 @@ export default function DiscountForm({ isOpen, onClose, onSave, initialData }) {
         value: initialData.value !== undefined && initialData.value !== null ? initialData.value : '',
         min_amount: initialData.min_amount !== undefined && initialData.min_amount !== null ? initialData.min_amount : 0,
         min_qty: initialData.min_qty || 1,
-        start_date: initialData.start_date || '',
-        end_date: initialData.end_date || '',
+        start_date: toInputDate(initialData.start_date),
+        end_date: toInputDate(initialData.end_date),
         max_uses: initialData.max_uses !== undefined && initialData.max_uses !== null ? initialData.max_uses : '',
         applicable_to: initialData.applicable_to || 'all',
         is_active: initialData.is_active !== undefined ? (initialData.is_active ? 1 : 0) : 1,
@@ -77,6 +92,8 @@ export default function DiscountForm({ isOpen, onClose, onSave, initialData }) {
         value: parseFloat(form.value) || 0,
         min_amount: parseFloat(form.min_amount) || 0,
         min_qty: parseInt(form.min_qty) || 1,
+        start_date: form.start_date ? toInputDate(form.start_date) : null,
+        end_date: form.end_date ? toInputDate(form.end_date) : null,
         max_uses: form.max_uses ? parseInt(form.max_uses) : null,
       })
       onClose()
@@ -181,7 +198,7 @@ export default function DiscountForm({ isOpen, onClose, onSave, initialData }) {
             <input
               type="date"
               name="start_date"
-              value={form.start_date || ''}
+              value={toInputDate(form.start_date)}
               onChange={handleChange}
             />
           </div>
@@ -191,7 +208,7 @@ export default function DiscountForm({ isOpen, onClose, onSave, initialData }) {
             <input
               type="date"
               name="end_date"
-              value={form.end_date || ''}
+              value={toInputDate(form.end_date)}
               onChange={handleChange}
             />
           </div>

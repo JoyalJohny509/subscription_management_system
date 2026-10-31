@@ -2,6 +2,21 @@ import { useState, useEffect } from 'react'
 import Modal from '../../components/Modal'
 import { getProducts } from '../../api/products'
 
+function toInputDate(val) {
+  if (!val) return ''
+  if (typeof val === 'string') {
+    const match = val.match(/^(\d{4}-\d{2}-\d{2})/)
+    if (match) return match[1]
+  }
+  try {
+    const d = new Date(val)
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().slice(0, 10)
+    }
+  } catch (e) {}
+  return ''
+}
+
 export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
   const isEdit = !!initialData
   const [form, setForm] = useState({
@@ -30,8 +45,8 @@ export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
         billing_cycle: initialData.billing_cycle || 'monthly',
         price: initialData.price !== undefined && initialData.price !== null ? initialData.price : '',
         min_qty: initialData.min_qty || 1,
-        start_date: initialData.start_date || '',
-        end_date: initialData.end_date || '',
+        start_date: toInputDate(initialData.start_date),
+        end_date: toInputDate(initialData.end_date),
         allow_pause: Boolean(initialData.allow_pause),
         allow_early_close: Boolean(initialData.allow_early_close),
         allow_renewal: initialData.allow_renewal !== undefined ? Boolean(initialData.allow_renewal) : true,
@@ -96,6 +111,8 @@ export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
         product_id: Number(form.product_id),
         price: parseFloat(form.price) || 0,
         min_qty: parseInt(form.min_qty) || 1,
+        start_date: form.start_date ? toInputDate(form.start_date) : null,
+        end_date: form.end_date ? toInputDate(form.end_date) : null,
         auto_close: form.auto_close ? 1 : 0,
         allow_pause: form.allow_pause ? 1 : 0,
         allow_early_close: form.allow_early_close ? 1 : 0,
@@ -180,11 +197,21 @@ export default function PlanForm({ isOpen, onClose, onSave, initialData }) {
         <div className="form-row">
           <div className="form-group">
             <label>Start Date</label>
-            <input name="start_date" type="date" value={form.start_date?.split?.('T')?.[0] || form.start_date || ''} onChange={handleChange} />
+            <input
+              name="start_date"
+              type="date"
+              value={toInputDate(form.start_date)}
+              onChange={handleChange}
+            />
           </div>
           <div className="form-group">
             <label>End Date</label>
-            <input name="end_date" type="date" value={form.end_date?.split?.('T')?.[0] || form.end_date || ''} onChange={handleChange} />
+            <input
+              name="end_date"
+              type="date"
+              value={toInputDate(form.end_date)}
+              onChange={handleChange}
+            />
           </div>
         </div>
 
