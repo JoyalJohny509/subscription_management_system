@@ -12,6 +12,7 @@ export default function UserForm({ isOpen, onClose, onSave, initialData }) {
   })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
     if (initialData) {
@@ -25,6 +26,7 @@ export default function UserForm({ isOpen, onClose, onSave, initialData }) {
       setForm({ name: '', email: '', role: 'staff', password: '' })
     }
     setErrors({})
+    setShowPassword(false)
   }, [initialData, isOpen])
 
   const handleChange = (e) => {
@@ -135,14 +137,39 @@ export default function UserForm({ isOpen, onClose, onSave, initialData }) {
         {!isEdit && (
           <div className="form-group">
             <label>Password *</label>
-            <input
-              name="password"
-              type="password"
-              value={form.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-              style={errors.password ? { borderColor: 'var(--danger)' } : {}}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={form.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                style={{
+                  paddingRight: '42px',
+                  width: '100%',
+                  ...(errors.password ? { borderColor: 'var(--danger)' } : {})
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  fontSize: '1rem',
+                  padding: '4px',
+                }}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
             <small style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '4px', display: 'block' }}>
               Must be at least 8 characters with uppercase, lowercase, and a special character (!@#$...).
             </small>
