@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getInvoiceById, confirmInvoice, cancelInvoice, applyDiscount } from '../../api/invoices'
-import { getPaymentsByInvoice, createPayment } from '../../api/payments'
+import { getInvoiceById, confirmInvoice, cancelInvoice, applyDiscount, downloadInvoicePdf, sendInvoiceEmail } from '../../api/invoices'
+import { getPaymentsByInvoice, createPayment, getUpiQrCode } from '../../api/payments'
 import { useAuth } from '../../context/AuthContext'
 import Badge from '../../components/Badge'
 import Modal from '../../components/Modal'
@@ -28,6 +28,15 @@ export default function InvoiceDetail() {
   const [payMethod, setPayMethod] = useState('upi')
   const [payNotes, setPayNotes] = useState('')
   const [paying, setPaying] = useState(false)
+
+  // UPI QR state
+  const [showQrModal, setShowQrModal] = useState(false)
+  const [qrData, setQrData] = useState(null)
+  const [qrLoading, setQrLoading] = useState(false)
+
+  // PDF & Email state
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [emailLoading, setEmailLoading] = useState(false)
 
   const fetchData = async () => {
     setLoading(true)
@@ -114,6 +123,59 @@ export default function InvoiceDetail() {
     }
   }
 
+  // ── PDF Download ────────────────────────────────────────────────────────────
+  const handleDownloadPdf = async () => {
+    setPdfLoading(true)
+    setError('')
+    try {
+      const res = await downloadInvoicePdf(id)
+      const blob = new Blob([res.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${invoice.invoice_number || `INV-${String(invoice.id).padStart(4, '0')}`}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      setSuccess('PDF downloaded successfully!')
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to download PDF.')
+    } finally {
+      setPdfLoading(false)
+    }
+  }
+
+  // ── Send Invoice Email ──────────────────────────────────────────────────────
+  const handleSendEmail = async () => {
+    setEmailLoading(true)
+    setError('')
+    try {
+      const res = await sendInvoiceEmail(id)
+      const msg = res.data?.message || 'Invoice email sent!'
+      setSuccess(msg)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to send email.')
+    } finally {
+      setEmailLoading(false)
+    }
+  }
+
+  // ── Show UPI QR ─────────────────────────────────────────────────────────────
+  const handleShowQr = async () => {
+    setQrLoading(true)
+    setError('')
+    try {
+      const res = await getUpiQrCode(id)
+      setQrData(res.data.data || res.data)
+      setShowQrModal(true)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to generate UPI QR.')
+    } finally {
+      setQrLoading(false)
+    }
+  }
+
   if (loading) return <div className="spinner" style={{ margin: '40px auto' }} />
   if (error && !invoice) return <div className="alert alert-danger">{error}</div>
   if (!invoice) return null
@@ -134,6 +196,19 @@ export default function InvoiceDetail() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn btn-secondary" onClick={handleDownloadPdf} disabled={pdfLoading}>
+            {pdfLoading ? '⏳ Generating...' : '📄 Download PDF'}
+          </button>
+          {isStaff() && (
+            <button className="btn btn-secondary" onClick={handleSendEmail} disabled={emailLoading}>
+              {emailLoading ? '⏳ Sending...' : '📧 Email Invoice'}
+            </button>
+          )}
+          {['draft', 'confirmed'].includes(invoice.status) && (
+            <button className="btn btn-secondary" onClick={handleShowQr} disabled={qrLoading}>
+              {qrLoading ? '⏳ Loading...' : '📱 UPI QR Code'}
+            </button>
+          )}
           <button className="btn btn-secondary" onClick={() => window.print()}>
             🖨️ Print Invoice
           </button>
@@ -286,6 +361,7 @@ export default function InvoiceDetail() {
         )}
       </div>
 
+      {/* Record Payment Modal */}
       {showPayModal && (
         <Modal
           isOpen={showPayModal}
@@ -331,6 +407,40 @@ export default function InvoiceDetail() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* UPI QR Code Modal */}
+      {showQrModal && qrData && (
+        <Modal
+          isOpen={showQrModal}
+          onClose={() => setShowQrModal(false)}
+          title="UPI Payment QR Code"
+        >
+          <div style={{ textAlign: 'center', padding: '16px 0' }}>
+            <img
+              src={qrData.qr_code}
+              alt="UPI QR Code"
+              style={{ width: 250, height: 250, margin: '0 auto', display: 'block', border: '1px solid var(--border)', borderRadius: 8, padding: 8 }}
+            />
+            <p style={{ marginTop: 16, fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-primary)' }}>
+              {fmt(qrData.amount)}
+            </p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '4px 0' }}>
+              Invoice: {qrData.invoice_number}
+            </p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '4px 0' }}>
+              Pay to: <strong>{qrData.payee_name}</strong> ({qrData.payee_vpa})
+            </p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: 16 }}>
+              Scan this QR code with any UPI app (GPay, PhonePe, Paytm, etc.)
+            </p>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 12 }}>
+            <button className="btn btn-secondary" onClick={() => setShowQrModal(false)}>
+              Close
+            </button>
+          </div>
         </Modal>
       )}
     </div>
