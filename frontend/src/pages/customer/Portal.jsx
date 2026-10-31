@@ -54,7 +54,7 @@ export default function CustomerPortal() {
   }, [loadPortalData])
 
   const activeSub = subscriptions.find((s) => s.status === 'active') || subscriptions[0]
-  const unpaidInvoices = invoices.filter((i) => i.status === 'confirmed')
+  const unpaidInvoices = invoices.filter((i) => ['draft', 'confirmed'].includes(i.status))
   const totalOutstanding = unpaidInvoices.reduce((sum, i) => sum + (i.grand_total || 0), 0)
 
   // One-click PDF download using Member 3's backend pdfGenerator
@@ -337,12 +337,14 @@ export default function CustomerPortal() {
                           >
                             View
                           </button>
-                          {inv.status === 'confirmed' && (
+                          {['draft', 'confirmed'].includes(inv.status) && (
                             <button
                               className="btn btn-success btn-sm"
                               onClick={() => openUpiPayment(inv)}
+                              title="Pay invoice instantly with UPI QR code"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
                             >
-                              Pay UPI
+                              <span>📲</span> Pay with QR
                             </button>
                           )}
                         </div>

@@ -11,6 +11,7 @@ import { generateInvoiceFromSub, getInvoices } from '../../api/invoices'
 import { useAuth } from '../../context/AuthContext'
 import Badge from '../../components/Badge'
 import Modal from '../../components/Modal'
+import UpiPaymentModal from '../../components/UpiPaymentModal'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -31,6 +32,8 @@ export default function SubscriptionDetail() {
   const [periodStart, setPeriodStart] = useState('')
   const [periodEnd, setPeriodEnd] = useState('')
   const [generating, setGenerating] = useState(false)
+  const [upiInvoice, setUpiInvoice] = useState(null)
+  const [showUpiModal, setShowUpiModal] = useState(false)
 
   const fetchData = async () => {
     setLoading(true)
@@ -298,6 +301,16 @@ export default function SubscriptionDetail() {
                     >
                       View
                     </button>
+                    {['draft', 'confirmed'].includes(inv.status) && (
+                      <button
+                        className="btn btn-success btn-sm"
+                        onClick={() => { setUpiInvoice(inv); setShowUpiModal(true) }}
+                        title="Pay invoice instantly with UPI QR code"
+                        style={{ marginLeft: 6, display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
+                      >
+                        <span>📲</span> Pay with QR
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -305,6 +318,18 @@ export default function SubscriptionDetail() {
           </table>
         )}
       </div>
+
+      {showUpiModal && upiInvoice && (
+        <UpiPaymentModal
+          isOpen={showUpiModal}
+          onClose={() => { setShowUpiModal(false); setUpiInvoice(null) }}
+          invoice={upiInvoice}
+          onPaymentSuccess={() => {
+            fetchSub()
+            setSuccess('Payment settled successfully via UPI!')
+          }}
+        />
+      )}
 
       {showGenModal && (
         <Modal

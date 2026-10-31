@@ -6,6 +6,7 @@ import DataTable from '../../components/DataTable'
 import Badge from '../../components/Badge'
 import SearchBar from '../../components/SearchBar'
 import Pagination from '../../components/Pagination'
+import UpiPaymentModal from '../../components/UpiPaymentModal'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -19,6 +20,8 @@ export default function InvoiceList() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [downloadingId, setDownloadingId] = useState(null)
+  const [upiInvoice, setUpiInvoice] = useState(null)
+  const [showUpiModal, setShowUpiModal] = useState(false)
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true)
@@ -147,6 +150,16 @@ export default function InvoiceList() {
           >
             {downloadingId === row.id ? '...' : 'PDF'}
           </button>
+          {['draft', 'confirmed'].includes(row.status) && (
+            <button
+              className="btn btn-success btn-sm"
+              onClick={() => { setUpiInvoice(row); setShowUpiModal(true) }}
+              title="Pay invoice instantly with UPI QR code"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
+            >
+              <span>📲</span> Pay with QR
+            </button>
+          )}
           {isStaff() && row.status === 'draft' && (
             <button
               className="btn btn-primary btn-sm"
@@ -208,6 +221,18 @@ export default function InvoiceList() {
       </div>
 
       <DataTable columns={columns} data={invoices} loading={loading} emptyMessage="No invoices found." />
+
+      {showUpiModal && upiInvoice && (
+        <UpiPaymentModal
+          isOpen={showUpiModal}
+          onClose={() => { setShowUpiModal(false); setUpiInvoice(null) }}
+          invoice={upiInvoice}
+          onPaymentSuccess={() => {
+            fetchInvoices()
+            setSuccess('Payment settled successfully via UPI!')
+          }}
+        />
+      )}
     </div>
   )
 }
