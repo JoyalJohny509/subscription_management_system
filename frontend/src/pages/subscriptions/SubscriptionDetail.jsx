@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   getSubscriptionById,
+  updateSubscription,
   confirmSubscription,
   activateSubscription,
   pauseSubscription,
@@ -14,6 +15,21 @@ import Modal from '../../components/Modal'
 import UpiPaymentModal from '../../components/UpiPaymentModal'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+
+function toInputDate(val) {
+  if (!val) return ''
+  if (typeof val === 'string') {
+    const match = val.match(/^(\d{4}-\d{2}-\d{2})/)
+    if (match) return match[1]
+  }
+  try {
+    const d = new Date(val)
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().slice(0, 10)
+    }
+  } catch (e) {}
+  return ''
+}
 
 export default function SubscriptionDetail() {
   const { id } = useParams()
@@ -34,6 +50,14 @@ export default function SubscriptionDetail() {
   const [generating, setGenerating] = useState(false)
   const [upiInvoice, setUpiInvoice] = useState(null)
   const [showUpiModal, setShowUpiModal] = useState(false)
+
+  // Edit Subscription Modal
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editStartDate, setEditStartDate] = useState('')
+  const [editExpiryDate, setEditExpiryDate] = useState('')
+  const [editPaymentTerms, setEditPaymentTerms] = useState('immediate')
+  const [editNotes, setEditNotes] = useState('')
+  const [editingSub, setEditingSub] = useState(false)
 
   const fetchData = async () => {
     setLoading(true)
@@ -60,6 +84,36 @@ export default function SubscriptionDetail() {
 
   useEffect(() => { fetchData() }, [id])
 
+  const openEditModal = () => {
+    if (!sub) return
+    setEditStartDate(toInputDate(sub.start_date))
+    setEditExpiryDate(toInputDate(sub.expiry_date))
+    setEditPaymentTerms(sub.payment_terms || 'immediate')
+    setEditNotes(sub.notes || '')
+    setShowEditModal(true)
+  }
+
+  const handleSaveSubscription = async (e) => {
+    e.preventDefault()
+    setEditingSub(true)
+    setError('')
+    try {
+      await updateSubscription(id, {
+        start_date: editStartDate ? toInputDate(editStartDate) : null,
+        expiry_date: editExpiryDate ? toInputDate(editExpiryDate) : null,
+        payment_terms: editPaymentTerms,
+        notes: editNotes,
+      })
+      setShowEditModal(false)
+      setSuccess('Subscription dates & terms updated successfully!')
+      fetchData()
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to update subscription.')
+    } finally {
+      setEditingSub(false)
+    }
+  }
+
   const handleAction = async (actionFn, successMsg) => {
     setError('')
     setSuccess('')
@@ -72,16 +126,24 @@ export default function SubscriptionDetail() {
     }
   }
 
+  const handleOpenGenModal = () => {
+    if (sub) {
+      setPeriodStart(toInputDate(sub.start_date))
+      setPeriodEnd(toInputDate(sub.expiry_date))
+    }
+    setShowGenModal(true)
+  }
+
   const handleGenerateInvoice = async (e) => {
     e.preventDefault()
     setGenerating(true)
     setError('')
     try {
       const res = await generateInvoiceFromSub(id, {
-        issue_date: issueDate,
-        due_date: dueDate || null,
-        billing_period_start: periodStart || null,
-        billing_period_end: periodEnd || null,
+        issue_date: issueDate ? toInputDate(issueDate) : null,
+        due_date: dueDate ? toInputDate(dueDate) : null,
+        billing_period_start: periodStart ? toInputDate(periodStart) : null,
+        billing_period_end: periodEnd ? toInputDate(periodEnd) : null,
       })
       setShowGenModal(false)
       const invId = res.data.data?.id || res.data.id
@@ -116,12 +178,20 @@ export default function SubscriptionDetail() {
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {isStaff() && ['draft', 'quotation'].includes(sub.status) && (
-            <button
-              className="btn btn-primary"
-              onClick={() => handleAction(confirmSubscription, 'Subscription confirmed!')}
-            >
-              Confirm Subscription
-            </button>
+            <>
+              <button
+                className="btn btn-secondary"
+                onClick={openEditModal}
+              >
+                ✏️ Edit Dates & Terms
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => handleAction(confirmSubscription, 'Subscription confirmed!')}
+              >
+                Confirm Subscription
+              </button>
+            </>
           )}
 
           {isStaff() && sub.status === 'confirmed' && (
@@ -137,7 +207,7 @@ export default function SubscriptionDetail() {
             <>
               <button
                 className="btn btn-primary"
-                onClick={() => setShowGenModal(true)}
+                onClick={handleOpenGenModal}
               >
                 + Generate Invoice
               </button>
@@ -258,7 +328,7 @@ export default function SubscriptionDetail() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h3 style={{ margin: 0 }}>Invoice History</h3>
           {isStaff() && sub.status === 'active' && (
-            <button className="btn btn-secondary btn-sm" onClick={() => setShowGenModal(true)}>
+            <button className="btn btn-secondary btn-sm" onClick={handleOpenGenModal}>
               + Generate Next Invoice
             </button>
           )}
@@ -345,7 +415,7 @@ export default function SubscriptionDetail() {
               <label>Issue Date *</label>
               <input
                 type="date"
-                value={issueDate}
+                value={toInputDate(issueDate)}
                 onChange={(e) => setIssueDate(e.target.value)}
                 required
               />
@@ -354,7 +424,7 @@ export default function SubscriptionDetail() {
               <label>Due Date</label>
               <input
                 type="date"
-                value={dueDate}
+                value={toInputDate(dueDate)}
                 onChange={(e) => setDueDate(e.target.value)}
               />
             </div>
@@ -363,7 +433,7 @@ export default function SubscriptionDetail() {
                 <label>Billing Period Start</label>
                 <input
                   type="date"
-                  value={periodStart}
+                  value={toInputDate(periodStart)}
                   onChange={(e) => setPeriodStart(e.target.value)}
                 />
               </div>
@@ -371,7 +441,7 @@ export default function SubscriptionDetail() {
                 <label>Billing Period End</label>
                 <input
                   type="date"
-                  value={periodEnd}
+                  value={toInputDate(periodEnd)}
                   onChange={(e) => setPeriodEnd(e.target.value)}
                 />
               </div>
@@ -382,6 +452,63 @@ export default function SubscriptionDetail() {
               </button>
               <button type="submit" className="btn btn-primary" disabled={generating}>
                 {generating ? 'Generating...' : 'Generate Invoice'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {showEditModal && (
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          title="Edit Subscription Dates & Terms"
+        >
+          <form onSubmit={handleSaveSubscription}>
+            <div className="grid-2">
+              <div className="form-group">
+                <label>Start Date</label>
+                <input
+                  type="date"
+                  value={toInputDate(editStartDate)}
+                  onChange={(e) => setEditStartDate(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Expiry Date</label>
+                <input
+                  type="date"
+                  value={toInputDate(editExpiryDate)}
+                  onChange={(e) => setEditExpiryDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Payment Terms</label>
+              <select
+                value={editPaymentTerms}
+                onChange={(e) => setEditPaymentTerms(e.target.value)}
+              >
+                <option value="immediate">Immediate</option>
+                <option value="net_15">Net 15</option>
+                <option value="net_30">Net 30</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Internal Notes</label>
+              <textarea
+                rows="2"
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="Optional notes..."
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20 }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={editingSub}>
+                {editingSub ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </form>

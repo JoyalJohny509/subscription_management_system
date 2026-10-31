@@ -21,7 +21,7 @@ function validatePassword(password) {
 
 // ── POST /api/auth/register ───────────────────────────────────────────────────
 router.post('/register', authRateLimiter, validate(registerSchema), (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, company_name, phone } = req.body;
 
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'name, email, and password are required' });
@@ -42,7 +42,7 @@ router.post('/register', authRateLimiter, validate(registerSchema), (req, res) =
   const userId = result.lastInsertRowid;
 
   // Create customer record
-  db.prepare(`INSERT INTO customers (user_id) VALUES (?)`).run(userId);
+  db.prepare(`INSERT INTO customers (user_id, company_name, phone) VALUES (?, ?, ?)`).run(userId, company_name ? company_name.trim() : null, phone ? String(phone).trim() : null);
 
   const user = db.prepare('SELECT id, name, email, role FROM users WHERE id = ?').get(userId);
   const token = generateToken(user);
