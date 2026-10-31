@@ -8,6 +8,7 @@ import { useToast } from '../../context/ToastContext'
 import Badge from '../../components/Badge'
 import Modal from '../../components/Modal'
 import UpiPaymentModal from '../../components/UpiPaymentModal'
+import { ArrowUpCircle, Repeat, Receipt, CreditCard, FileDown, QrCode, Info, ExternalLink } from 'lucide-react'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -138,7 +139,7 @@ export default function CustomerPortal() {
                   setShowSeatModal(true)
                 }}
               >
-                ⚡ Live Seat Upgrade
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ArrowUpCircle size={15} /> Seat Upgrade</span>
               </button>
             )}
           </div>
@@ -225,19 +226,19 @@ export default function CustomerPortal() {
           className={`tab-btn ${activeTab === 'subscriptions' ? 'active' : ''}`}
           onClick={() => setActiveTab('subscriptions')}
         >
-          🔄 My Subscriptions ({subscriptions.length})
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Repeat size={14} /> Subscriptions ({subscriptions.length})</span>
         </button>
         <button
           className={`tab-btn ${activeTab === 'invoices' ? 'active' : ''}`}
           onClick={() => setActiveTab('invoices')}
         >
-          🧾 Invoices & PDF Downloads ({invoices.length})
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Receipt size={14} /> Invoices & PDF ({invoices.length})</span>
         </button>
         <button
           className={`tab-btn ${activeTab === 'payments' ? 'active' : ''}`}
           onClick={() => setActiveTab('payments')}
         >
-          💳 Payment History ({payments.length})
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><CreditCard size={14} /> Payment History ({payments.length})</span>
         </button>
       </div>
 
@@ -329,7 +330,7 @@ export default function CustomerPortal() {
                             onClick={() => handleDownloadPdf(inv)}
                             title="Download official branded PDF invoice"
                           >
-                            📄 PDF
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><FileDown size={13} /> PDF</span>
                           </button>
                           <button
                             className="btn btn-secondary btn-sm"
@@ -344,7 +345,7 @@ export default function CustomerPortal() {
                               title="Pay invoice instantly with UPI QR code"
                               style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
                             >
-                              <span>📲</span> Pay with QR
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><QrCode size={13} /> Pay with QR</span>
                             </button>
                           )}
                         </div>
@@ -429,7 +430,7 @@ export default function CustomerPortal() {
                 fontSize: '0.85rem',
               }}
             >
-              <div>✨ <strong>Automated Proration:</strong></div>
+              <div><Info size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: 5 }} /><strong>Automated Proration:</strong></div>
               <div style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
                 If you increase seats mid-cycle, an invoice will be automatically generated with prorated amounts for only the remaining days in the active month.
               </div>

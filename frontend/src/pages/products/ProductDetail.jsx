@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext'
 import Modal from '../../components/Modal'
 import Badge from '../../components/Badge'
 import ProductForm from './ProductForm'
+import { Pencil, Trash2, ArrowLeft, Layers, Plus } from 'lucide-react'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -153,14 +154,14 @@ export default function ProductDetail() {
     <div>
       <div className="page-header">
         <div className="page-header-left">
-          <button className="btn btn-secondary btn-sm" onClick={() => navigate('/products')}>←</button>
+          <button className="btn btn-secondary btn-sm" onClick={() => navigate('/products')} title="Back to products"><ArrowLeft size={14} /></button>
           <div>
             <h1 className="page-title">{product.name}</h1>
             <p className="page-subtitle">{product.type || 'Product'}</p>
           </div>
         </div>
         {isStaff() && (
-          <button className="btn btn-secondary" onClick={() => setShowEditProduct(true)}>✏️ Edit Product</button>
+          <button className="btn btn-secondary" onClick={() => setShowEditProduct(true)}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Pencil size={13} /> Edit Product</span></button>
         )}
       </div>
 
@@ -208,7 +209,7 @@ export default function ProductDetail() {
 
         {variants.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon">📦</div>
+            <div className="empty-state-icon" style={{ display: 'flex', justifyContent: 'center', opacity: 0.4 }}><Layers size={36} /></div>
             <div className="empty-state-text">No variants yet</div>
           </div>
         ) : (
@@ -233,9 +234,9 @@ export default function ProductDetail() {
                             className="btn btn-secondary btn-sm"
                             onClick={() => { setEditVariant(v); setShowVariantForm(true) }}
                           >
-                            ✏️
+                            <Pencil size={13} />
                           </button>
-                          <button className="btn btn-danger btn-sm" onClick={() => handleDeleteVariant(v)}>🗑️</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleDeleteVariant(v)}><Trash2 size={13} /></button>
                         </div>
                       </td>
                     )}

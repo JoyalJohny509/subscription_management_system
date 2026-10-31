@@ -4,6 +4,7 @@ import { createQuotation, getQuotationById, updateQuotation } from '../../api/qu
 import { getUsers } from '../../api/users'
 import { getProducts } from '../../api/products'
 import { getPlans } from '../../api/plans'
+import { Trash2 } from 'lucide-react'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -296,9 +297,7 @@ export default function QuotationForm() {
                     className="btn btn-danger btn-sm"
                     onClick={() => removeLine(idx)}
                     disabled={lines.length === 1}
-                  >
-                    ✕
-                  </button>
+                  ><Trash2 size={13} /></button>
                 </div>
               </div>
             ))}

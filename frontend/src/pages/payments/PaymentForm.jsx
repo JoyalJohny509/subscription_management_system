@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Modal from '../../components/Modal'
+import { Zap } from 'lucide-react'
 import { getInvoices } from '../../api/invoices'
 import { getUpiQrCode, processWebhook } from '../../api/payments'
 
@@ -228,7 +229,7 @@ export default function PaymentForm({ isOpen, onClose, onSave, initialInvoiceId,
             disabled={simulating || loading || !invoiceId}
             title="Simulate successful payment via mock gateway webhook"
           >
-            {simulating ? 'Simulating...' : '⚡ Simulate Mock Webhook'}
+            {simulating ? 'Simulating...' : <><Zap size={14} /> Simulate Mock Webhook</>}
           </button>
           <div style={{ display: 'flex', gap: 12 }}>
             <button type="button" className="btn btn-secondary" onClick={onClose}>

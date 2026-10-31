@@ -19,7 +19,15 @@ const STATUS_MAP = {
   percentage: 'badge-percentage',
 }
 
-export default function Badge({ status }) {
-  const cls = STATUS_MAP[status?.toLowerCase()] || 'badge-draft'
-  return <span className={`badge ${cls}`}>{status || '—'}</span>
+export default function Badge({ status, label, showDot = true, size = 'md' }) {
+  const norm = String(status || '').toLowerCase()
+  const cls = STATUS_MAP[norm] || 'badge-draft'
+  const displayLabel = label || status || '—'
+
+  return (
+    <span className={`badge ${cls} badge-${size}`}>
+      {showDot && <span className="badge-dot" />}
+      <span className="badge-label">{displayLabel}</span>
+    </span>
+  )
 }

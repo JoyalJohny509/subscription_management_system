@@ -1,3 +1,5 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+
 export default function Pagination({ page, totalPages, onPageChange }) {
   if (totalPages <= 1) return null
 
@@ -10,17 +12,21 @@ export default function Pagination({ page, totalPages, onPageChange }) {
   return (
     <div className="pagination">
       <button
-        className="pagination-btn"
+        className="pagination-btn pagination-nav"
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
+        aria-label="Previous page"
+        title="Previous page"
       >
-        ‹
+        <ChevronLeft size={16} strokeWidth={2} />
       </button>
 
       {start > 1 && (
         <>
-          <button className="pagination-btn" onClick={() => onPageChange(1)}>1</button>
-          {start > 2 && <span className="pagination-info">…</span>}
+          <button className="pagination-btn" onClick={() => onPageChange(1)}>
+            1
+          </button>
+          {start > 2 && <span className="pagination-ellipsis">…</span>}
         </>
       )}
 
@@ -36,7 +42,7 @@ export default function Pagination({ page, totalPages, onPageChange }) {
 
       {end < totalPages && (
         <>
-          {end < totalPages - 1 && <span className="pagination-info">…</span>}
+          {end < totalPages - 1 && <span className="pagination-ellipsis">…</span>}
           <button className="pagination-btn" onClick={() => onPageChange(totalPages)}>
             {totalPages}
           </button>
@@ -44,11 +50,13 @@ export default function Pagination({ page, totalPages, onPageChange }) {
       )}
 
       <button
-        className="pagination-btn"
+        className="pagination-btn pagination-nav"
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages}
+        aria-label="Next page"
+        title="Next page"
       >
-        ›
+        <ChevronRight size={16} strokeWidth={2} />
       </button>
     </div>
   )

@@ -1,9 +1,11 @@
+import { Inbox } from 'lucide-react'
+
 export default function DataTable({ columns, data, loading, emptyMessage }) {
   if (loading) {
     return (
       <div className="loading-container">
         <div className="spinner" />
-        <span>Loading data...</span>
+        <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Loading records...</span>
       </div>
     )
   }
@@ -13,7 +15,11 @@ export default function DataTable({ columns, data, loading, emptyMessage }) {
   const renderCell = (col, row) => {
     if (!col.render) {
       const directVal = row[col.key]
-      return directVal !== undefined && directVal !== null ? directVal : <span className="text-muted">—</span>
+      return directVal !== undefined && directVal !== null ? (
+        directVal
+      ) : (
+        <span className="text-muted">—</span>
+      )
     }
 
     const val = row[col.key]
@@ -23,7 +29,6 @@ export default function DataTable({ columns, data, loading, emptyMessage }) {
       if (val !== undefined) {
         result = col.render(val, row)
       } else {
-        // Try calling render(undefined, row) first
         try {
           result = col.render(undefined, row)
         } catch {
@@ -39,7 +44,6 @@ export default function DataTable({ columns, data, loading, emptyMessage }) {
       }
     }
 
-    // Safety guard: Never allow a plain non-element object to be rendered directly into JSX
     if (result !== null && typeof result === 'object' && !result.$$typeof && !Array.isArray(result)) {
       return <span className="text-muted">—</span>
     }
@@ -53,7 +57,9 @@ export default function DataTable({ columns, data, loading, emptyMessage }) {
         <thead>
           <tr>
             {columns.map((col) => (
-              <th key={col.key}>{col.label}</th>
+              <th key={col.key} style={col.width ? { width: col.width } : {}}>
+                {col.label}
+              </th>
             ))}
           </tr>
         </thead>
@@ -62,9 +68,14 @@ export default function DataTable({ columns, data, loading, emptyMessage }) {
             <tr>
               <td colSpan={columns.length}>
                 <div className="empty-state">
-                  <div className="empty-state-icon">📭</div>
+                  <div className="empty-state-icon">
+                    <Inbox size={36} strokeWidth={1.5} />
+                  </div>
                   <div className="empty-state-text">
-                    {emptyMessage || 'No data found'}
+                    {emptyMessage || 'No records found'}
+                  </div>
+                  <div className="empty-state-subtext">
+                    Try adjusting your filters or search query
                   </div>
                 </div>
               </td>
@@ -73,7 +84,7 @@ export default function DataTable({ columns, data, loading, emptyMessage }) {
             safeData.map((row, rowIdx) => (
               <tr key={row._id || row.id || rowIdx}>
                 {columns.map((col) => (
-                  <td key={col.key}>
+                  <td key={col.key} className={col.numeric ? 'numeric-cell' : ''}>
                     {renderCell(col, row)}
                   </td>
                 ))}

@@ -7,6 +7,7 @@ import Badge from '../../components/Badge'
 import SearchBar from '../../components/SearchBar'
 import Pagination from '../../components/Pagination'
 import UpiPaymentModal from '../../components/UpiPaymentModal'
+import { QrCode, FileDown } from 'lucide-react'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -148,7 +149,7 @@ export default function InvoiceList() {
             onClick={() => handleDownloadPdf(row)}
             disabled={downloadingId === row.id}
           >
-            {downloadingId === row.id ? '...' : 'PDF'}
+            {downloadingId === row.id ? <span className="spinner spinner-sm" /> : <><FileDown size={12} /> PDF</>}
           </button>
           {['draft', 'confirmed'].includes(row.status) && (
             <button
@@ -157,7 +158,7 @@ export default function InvoiceList() {
               title="Pay invoice instantly with UPI QR code"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
             >
-              <span>📲</span> Pay with QR
+              <><QrCode size={13} /> Pay with QR</>
             </button>
           )}
           {isStaff() && row.status === 'draft' && (

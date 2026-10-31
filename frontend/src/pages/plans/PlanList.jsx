@@ -6,6 +6,7 @@ import Badge from '../../components/Badge'
 import SearchBar from '../../components/SearchBar'
 import Pagination from '../../components/Pagination'
 import PlanForm from './PlanForm'
+import { Check, Repeat, Clock, Plus, Pencil, Trash2 } from 'lucide-react'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -77,9 +78,9 @@ export default function PlanList() {
       label: 'Plan Rules',
       render: (_, row) => (
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-          {row.allow_pause ? <span className="badge badge-active" style={{ fontSize: '0.7rem' }}>✓ Pause Allowed</span> : null}
-          {row.allow_renewal ? <span className="badge badge-confirmed" style={{ fontSize: '0.7rem' }}>✓ Renewable</span> : null}
-          {row.auto_close ? <span className="badge badge-closed" style={{ fontSize: '0.7rem' }}>⏰ Auto-Close</span> : null}
+          {row.allow_pause ? <span className="badge badge-active" style={{ fontSize: '0.7rem' }}><Check size={11} style={{ marginRight: 3 }} /> Pause</span> : null}
+          {row.allow_renewal ? <span className="badge badge-confirmed" style={{ fontSize: '0.7rem' }}><Repeat size={11} style={{ marginRight: 3 }} /> Renewable</span> : null}
+          {row.auto_close ? <span className="badge badge-closed" style={{ fontSize: '0.7rem' }}><Clock size={11} style={{ marginRight: 3 }} /> Auto-Close</span> : null}
           {!row.allow_pause && !row.allow_renewal && !row.auto_close ? (
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Standard</span>
           ) : null}

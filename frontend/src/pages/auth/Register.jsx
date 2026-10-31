@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { register as registerApi } from '../../api/auth'
+import BrightloopLogo from '../../components/BrightloopLogo'
+import { Eye, EyeOff } from 'lucide-react'
 
 function getStrength(password) {
   let score = 0
@@ -114,29 +116,22 @@ export default function Register() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '20px',
+        padding: '24px 16px',
       }}
     >
       <div style={{ width: '100%', maxWidth: '480px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <div
-            style={{
-              width: '48px', height: '48px', background: 'var(--accent-primary)',
-              borderRadius: '12px', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: '1.5rem', margin: '0 auto 12px',
-            }}
-          >
-            ⚡
-          </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-            Create Account
-          </h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: '4px', fontSize: '0.875rem' }}>
-            Join Brightloop SMS as a customer
-          </p>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '28px' }}>
+          <BrightloopLogo size="lg" />
         </div>
 
-        <div className="card">
+        <div className="card" style={{ padding: '32px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+            Create Account
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '24px' }}>
+            Join Brightloop SMS to manage subscriptions and invoices
+          </p>
+
           {apiError && <div className="alert alert-error">{apiError}</div>}
 
           <form onSubmit={handleSubmit}>
@@ -197,12 +192,13 @@ export default function Register() {
                     border: 'none',
                     cursor: 'pointer',
                     color: 'var(--text-muted)',
-                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
                     padding: '4px',
                   }}
                   title={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? '🙈' : '👁️'}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {form.password && (
@@ -246,12 +242,13 @@ export default function Register() {
                     border: 'none',
                     cursor: 'pointer',
                     color: 'var(--text-muted)',
-                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
                     padding: '4px',
                   }}
                   title={showConfirmPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showConfirmPassword ? '🙈' : '👁️'}
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {errors.confirmPassword && <span className="field-error">{errors.confirmPassword}</span>}

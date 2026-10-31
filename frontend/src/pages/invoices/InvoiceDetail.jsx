@@ -5,6 +5,7 @@ import { getPaymentsByInvoice, createPayment, getUpiQrCode } from '../../api/pay
 import { useAuth } from '../../context/AuthContext'
 import Badge from '../../components/Badge'
 import Modal from '../../components/Modal'
+import { FileDown, Mail, QrCode, Printer, CheckCircle, CreditCard, XCircle, ArrowLeft } from 'lucide-react'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -197,20 +198,20 @@ export default function InvoiceDetail() {
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn-secondary" onClick={handleDownloadPdf} disabled={pdfLoading}>
-            {pdfLoading ? '⏳ Generating...' : '📄 Download PDF'}
+            {pdfLoading ? <><span className="spinner spinner-sm" /> Generating...</> : <><FileDown size={14} /> Download PDF</>}
           </button>
           {isStaff() && (
             <button className="btn btn-secondary" onClick={handleSendEmail} disabled={emailLoading}>
-              {emailLoading ? '⏳ Sending...' : '📧 Email Invoice'}
+              {emailLoading ? <><span className="spinner spinner-sm" /> Sending...</> : <><Mail size={14} /> Email Invoice</>}
             </button>
           )}
           {['draft', 'confirmed'].includes(invoice.status) && (
             <button className="btn btn-secondary" onClick={handleShowQr} disabled={qrLoading}>
-              {qrLoading ? '⏳ Loading...' : '📱 UPI QR Code'}
+              {qrLoading ? <><span className="spinner spinner-sm" /> Loading...</> : <><QrCode size={14} /> UPI QR Code</>}
             </button>
           )}
           <button className="btn btn-secondary" onClick={() => window.print()}>
-            🖨️ Print Invoice
+            <><Printer size={14} /> Print Invoice</>
           </button>
           {isStaff() && invoice.status === 'draft' && (
             <button className="btn btn-primary" onClick={handleConfirm}>

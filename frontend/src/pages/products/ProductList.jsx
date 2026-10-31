@@ -7,6 +7,7 @@ import Badge from '../../components/Badge'
 import SearchBar from '../../components/SearchBar'
 import Pagination from '../../components/Pagination'
 import ProductForm from './ProductForm'
+import { Pencil, Trash2, Plus } from 'lucide-react'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -101,10 +102,10 @@ export default function ProductList() {
         <div className="table-actions">
           <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/products/${row?._id || row?.id}`)}>View</button>
           {isStaff() && (
-            <button className="btn btn-secondary btn-sm" onClick={() => { setEditProduct(row); setShowForm(true) }}>✏️ Edit</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => { setEditProduct(row); setShowForm(true) }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Pencil size={12} /> Edit</span></button>
           )}
           {isAdmin() && (
-            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(row)}>🗑️</button>
+            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(row)}><Trash2 size={13} /></button>
           )}
         </div>
       ),

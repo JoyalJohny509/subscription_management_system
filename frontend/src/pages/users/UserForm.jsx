@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Modal from '../../components/Modal'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function UserForm({ isOpen, onClose, onSave, initialData }) {
   const isEdit = !!initialData
@@ -167,7 +168,7 @@ export default function UserForm({ isOpen, onClose, onSave, initialData }) {
                 }}
                 title={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? '🙈' : '👁️'}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
             <small style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '4px', display: 'block' }}>

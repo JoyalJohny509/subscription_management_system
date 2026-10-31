@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import DataTable from '../../components/DataTable'
 import Badge from '../../components/Badge'
 import SearchBar from '../../components/SearchBar'
+import { Pencil, UserPlus } from 'lucide-react'
 import Pagination from '../../components/Pagination'
 import UserForm from './UserForm'
 
@@ -71,7 +72,7 @@ export default function UserList() {
               className="btn btn-secondary btn-sm"
               onClick={() => { setEditUser(row); setShowForm(true) }}
             >
-              ✏️ Edit
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Pencil size={13} /> Edit</span>
             </button>
           )}
         </div>
@@ -91,7 +92,7 @@ export default function UserList() {
             className="btn btn-primary"
             onClick={() => { setEditUser(null); setShowForm(true) }}
           >
-            + Create User
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><UserPlus size={15} /> Create User</span>
           </button>
         )}
       </div>

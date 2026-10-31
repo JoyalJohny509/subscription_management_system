@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { forgotPassword } from '../../api/auth'
+import BrightloopLogo from '../../components/BrightloopLogo'
+import { CheckCircle2, ArrowLeft } from 'lucide-react'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
@@ -31,36 +33,30 @@ export default function ForgotPassword() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '20px',
+        padding: '24px 16px',
       }}
     >
-      <div style={{ width: '100%', maxWidth: '400px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <div
-            style={{
-              width: '48px', height: '48px', background: 'var(--accent-primary)',
-              borderRadius: '12px', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: '1.5rem', margin: '0 auto 12px',
-            }}
-          >
-            ⚡
-          </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-            Forgot Password
-          </h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: '4px', fontSize: '0.875rem' }}>
-            Enter your email to receive a reset code
-          </p>
+      <div style={{ width: '100%', maxWidth: '420px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '28px' }}>
+          <BrightloopLogo size="lg" />
         </div>
 
-        <div className="card">
+        <div className="card" style={{ padding: '32px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+            Reset Password
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '24px' }}>
+            Enter your email to receive recovery instructions
+          </p>
+
           {sent ? (
             <div>
-              <div className="alert alert-success" style={{ marginBottom: '20px' }}>
-                ✅ Password reset code sent! Check the server console for the reset code.
+              <div className="alert alert-success" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle2 size={16} />
+                <span>Password reset code sent! Check server console.</span>
               </div>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '20px' }}>
-                The reset code has been logged to the server console (for development). In production, it would be sent to your email.
+                The reset code has been logged to the server console (for development). In production, it would be dispatched to your inbox.
               </p>
               <Link to="/login" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', display: 'flex' }}>
                 Back to Login
@@ -77,7 +73,7 @@ export default function ForgotPassword() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder="you@company.com"
                   autoFocus
                 />
               </div>
@@ -92,7 +88,9 @@ export default function ForgotPassword() {
               </button>
 
               <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                <Link to="/login">← Back to Login</Link>
+                <Link to="/login" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <ArrowLeft size={14} /> Back to Login
+                </Link>
               </div>
             </form>
           )}

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getQuotationById, sendQuotation, acceptQuotation, rejectQuotation } from '../../api/quotations'
 import { useAuth } from '../../context/AuthContext'
 import Badge from '../../components/Badge'
+import { Printer, Pencil, CheckCircle2, XCircle, Send } from 'lucide-react'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -86,12 +87,12 @@ export default function QuotationDetail() {
 
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-secondary" onClick={() => window.print()}>
-            🖨️ Print
+            <><Printer size={14} /> Print</>
           </button>
           {isStaff() && quotation.status === 'draft' && (
             <>
               <button className="btn btn-secondary" onClick={() => navigate(`/quotations/${id}/edit`)}>
-                ✏️ Edit
+                <><Pencil size={14} /> Edit</>
               </button>
               <button className="btn btn-primary" onClick={handleSend}>
                 Send to Customer
@@ -101,10 +102,10 @@ export default function QuotationDetail() {
           {isStaff() && quotation.status === 'sent' && (
             <>
               <button className="btn btn-success" onClick={handleAccept}>
-                ✓ Accept & Convert to Subscription
+                <><CheckCircle2 size={14} /> Accept & Convert to Subscription</>
               </button>
               <button className="btn btn-danger" onClick={handleReject}>
-                ✕ Reject
+                <><XCircle size={14} /> Reject</>
               </button>
             </>
           )}

@@ -5,6 +5,7 @@ import { sendRenewalReminders } from '../api/notifications'
 import { useToast } from '../context/ToastContext'
 import StatCard from '../components/StatCard'
 import Badge from '../components/Badge'
+import { Play, Bell, RefreshCw, Repeat, IndianRupee, Clock, AlertTriangle, TrendingUp } from 'lucide-react'
 
 const fmt = (amount) =>
   `₹${Number(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
@@ -148,17 +149,17 @@ export default function Dashboard() {
             disabled={runningJob}
             title="Execute Member 1's automated billing cron immediately"
           >
-            {runningJob ? 'Running Job...' : '⚡ Run Auto-Billing'}
+            {runningJob ? 'Running Job...' : <><Play size={13} style={{ fill: 'currentColor' }} /> Run Auto-Billing</>}
           </button>
           <button
             className="btn btn-secondary btn-sm"
             onClick={handleSendRenewalAlerts}
             title="Dispatch Member 3's email renewal alerts"
           >
-            🔔 Send Renewal Alerts
+            <><Bell size={13} /> Send Renewal Alerts</>
           </button>
           <button className="btn btn-primary btn-sm" onClick={() => fetchData(true)} disabled={loading}>
-            {loading ? <span className="spinner spinner-sm" /> : '🔄'} Refresh
+            {loading ? <span className="spinner spinner-sm" /> : <RefreshCw size={13} />} Refresh
           </button>
         </div>
       </div>
@@ -168,28 +169,28 @@ export default function Dashboard() {
       {/* Primary KPI Stat Cards */}
       <div className="grid-4" style={{ marginBottom: '20px' }}>
         <StatCard
-          icon="🔄"
+          icon={<Repeat size={20} />}
           label="Active Subscriptions"
           value={activeSubs}
           color="indigo"
           subtitle="Contracted clients"
         />
         <StatCard
-          icon="💰"
+          icon={<IndianRupee size={20} />}
           label="Revenue Received"
           value={fmt(totalRevenue)}
           color="green"
           subtitle="Settled payments"
         />
         <StatCard
-          icon="⏳"
+          icon={<Clock size={20} />}
           label="Outstanding Dues"
           value={fmt(outstanding)}
           color="amber"
           subtitle="Pending collections"
         />
         <StatCard
-          icon="⚠️"
+          icon={<AlertTriangle size={20} />}
           label="Overdue Invoices"
           value={summary?.overdue_invoices ?? 0}
           color="red"

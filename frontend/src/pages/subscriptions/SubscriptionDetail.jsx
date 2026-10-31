@@ -13,6 +13,7 @@ import { useAuth } from '../../context/AuthContext'
 import Badge from '../../components/Badge'
 import Modal from '../../components/Modal'
 import UpiPaymentModal from '../../components/UpiPaymentModal'
+import { QrCode } from 'lucide-react'
 
 const fmt = (v) => `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -378,7 +379,7 @@ export default function SubscriptionDetail() {
                         title="Pay invoice instantly with UPI QR code"
                         style={{ marginLeft: 6, display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
                       >
-                        <span>📲</span> Pay with QR
+                        <><QrCode size={13} /> Pay with QR</>
                       </button>
                     )}
                   </td>
