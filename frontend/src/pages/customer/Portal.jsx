@@ -115,8 +115,8 @@ export default function CustomerPortal() {
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
       {/* Welcome Hero Banner */}
       <div className="portal-hero">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
-          <div>
+        <div className="portal-hero-inner">
+          <div className="portal-hero-text">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
               <span className="portal-plan-tag">Customer Portal</span>
               <span className="kpi-chip">Sprint 2 Active</span>
@@ -129,7 +129,7 @@ export default function CustomerPortal() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div className="portal-hero-actions">
             {activeSub && (
               <button
                 className="btn btn-primary"

@@ -24,8 +24,8 @@ function RevenueChart({ data }) {
   const max = Math.max(...data.map((d) => d.amount || 0), 1)
 
   return (
-    <div style={{ marginTop: '16px' }}>
-      <div className="bar-chart" style={{ height: '180px', display: 'flex', alignItems: 'flex-end', gap: '16px', padding: '0 10px' }}>
+    <div style={{ marginTop: '16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '8px' }}>
+      <div className="bar-chart" style={{ height: '180px', display: 'flex', alignItems: 'flex-end', gap: '16px', padding: '0 10px', minWidth: '280px' }}>
         {data.map((item, i) => {
           const pct = Math.max(8, ((item.amount || 0) / max) * 100)
           return (
@@ -141,7 +141,7 @@ export default function Dashboard() {
             Real-time analytics across subscriptions, cash collection, and billing health
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div className="page-header-actions">
           <button
             className="btn btn-secondary btn-sm"
             onClick={handleRunBillingCron}
@@ -199,45 +199,45 @@ export default function Dashboard() {
 
       {/* Advanced Recurring Revenue KPI Strip (MRR & ARR) */}
       <div className="card" style={{ marginBottom: '24px', background: 'linear-gradient(90deg, rgba(30, 41, 59, 0.9) 0%, rgba(99, 102, 241, 0.08) 100%)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <div className="kpi-strip">
+          <div className="kpi-item">
+            <div className="kpi-label">
               Monthly Recurring (MRR)
             </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-primary)', marginTop: 4 }}>
+            <div className="kpi-val" style={{ color: 'var(--accent-primary)' }}>
               {fmt(estimatedMRR)}
             </div>
           </div>
 
-          <div style={{ width: '1px', height: '40px', background: 'var(--border)' }} />
+          <div className="kpi-divider" />
 
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <div className="kpi-item">
+            <div className="kpi-label">
               Annual Run Rate (ARR)
             </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#38BDF8', marginTop: 4 }}>
+            <div className="kpi-val" style={{ color: '#38BDF8' }}>
               {fmt(estimatedARR)}
             </div>
           </div>
 
-          <div style={{ width: '1px', height: '40px', background: 'var(--border)' }} />
+          <div className="kpi-divider" />
 
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <div className="kpi-item">
+            <div className="kpi-label">
               Avg. Revenue Per Account (ARPU)
             </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 4 }}>
+            <div className="kpi-val" style={{ color: 'var(--text-primary)' }}>
               {fmt(arpu)}
             </div>
           </div>
 
-          <div style={{ width: '1px', height: '40px', background: 'var(--border)' }} />
+          <div className="kpi-divider" />
 
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <div className="kpi-item">
+            <div className="kpi-label">
               Collection Efficiency
             </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: collectionEfficiency >= 80 ? 'var(--success)' : 'var(--warning)', marginTop: 4 }}>
+            <div className="kpi-val" style={{ color: collectionEfficiency >= 80 ? 'var(--success)' : 'var(--warning)' }}>
               {collectionEfficiency}%
             </div>
           </div>
